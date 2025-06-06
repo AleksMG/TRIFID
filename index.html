@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced 4×4×4 Trifid Cipher</title>
+    <title>Professional 4×4×4 Trifid Cipher</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
@@ -401,6 +401,37 @@
             font-weight: bold;
         }
 
+        .char-highlight {
+            background-color: rgba(67, 97, 238, 0.2);
+            padding: 0.1rem 0.25rem;
+            border-radius: 0.25rem;
+        }
+
+        .char-skipped {
+            background-color: rgba(248, 150, 30, 0.2);
+            padding: 0.1rem 0.25rem;
+            border-radius: 0.25rem;
+        }
+
+        .settings-file-input {
+            display: none;
+        }
+
+        .settings-file-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background-color: rgba(67, 97, 238, 0.1);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .settings-file-label:hover {
+            background-color: rgba(67, 97, 238, 0.2);
+        }
+
         @media (max-width: 768px) {
             body {
                 padding: 1rem;
@@ -423,7 +454,7 @@
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-cube"></i> Advanced 4×4×4 Trifid Cipher</h1>
+            <h1><i class="fas fa-cube"></i> Professional 4×4×4 Trifid Cipher</h1>
             <button class="theme-toggle" id="themeToggle">
                 <i class="fas fa-moon"></i>
             </button>
@@ -496,6 +527,11 @@
                     <button class="btn btn-outline" id="shuffleCube"><i class="fas fa-random"></i> Shuffle Alphabet</button>
                     <button class="btn btn-warning" id="applyShifts"><i class="fas fa-arrows-alt"></i> Apply Shifts</button>
                     <button class="btn btn-outline" id="resetCube"><i class="fas fa-undo"></i> Reset to Default</button>
+                    <input type="file" id="settingsFileInput" class="settings-file-input" accept=".txt,.json">
+                    <label for="settingsFileInput" class="settings-file-label" id="settingsFileLabel">
+                        <i class="fas fa-file-import"></i> Load Settings
+                    </label>
+                    <button class="btn btn-outline" id="saveSettings"><i class="fas fa-file-export"></i> Save Settings</button>
                 </div>
                 
                 <div id="alphabetStatus" class="alert" style="display: none;"></div>
@@ -512,6 +548,7 @@
                 <div class="form-group">
                     <label for="plaintext"><i class="fas fa-pen"></i> Plaintext</label>
                     <textarea id="plaintext" placeholder="Enter text to encrypt"></textarea>
+                    <div id="plaintextPreview" style="margin-top: 0.5rem;"></div>
                 </div>
                 
                 <div class="btn-group">
@@ -535,6 +572,7 @@
                 <div class="form-group">
                     <label for="ciphertext"><i class="fas fa-pen"></i> Ciphertext</label>
                     <textarea id="ciphertext" placeholder="Enter text to decrypt"></textarea>
+                    <div id="ciphertextPreview" style="margin-top: 0.5rem;"></div>
                 </div>
                 
                 <div class="btn-group">
@@ -599,6 +637,8 @@
                         <li>Copy-to-clipboard functionality for results</li>
                         <li>Sample texts for quick testing</li>
                         <li>Configurable cube shifting parameters</li>
+                        <li>Settings import/export functionality</li>
+                        <li>Character highlighting for better visibility</li>
                     </ul>
                     
                     <h4><i class="fas fa-shield-alt"></i> Enhanced Security Features:</h4>
@@ -608,6 +648,8 @@
                         <li>Multiple shuffle algorithms to choose from</li>
                         <li>Configurable layer, row, and column shifts</li>
                         <li>Improved handling of edge cases and invalid characters</li>
+                        <li>Filler character validation</li>
+                        <li>Alphabet uniqueness validation</li>
                     </ul>
                 </div>
             </div>
@@ -628,6 +670,7 @@
                 this.initEventListeners();
                 this.initTheme();
                 this.resetToDefault();
+                this.setupTextPreviews();
             }
 
             // Initialize event listeners
@@ -644,19 +687,65 @@
                 document.getElementById('resetCube').addEventListener('click', () => this.resetToDefault());
                 document.getElementById('encryptBtn').addEventListener('click', () => this.encrypt());
                 document.getElementById('decryptBtn').addEventListener('click', () => this.decrypt());
-                document.getElementById('clearPlaintext').addEventListener('click', () => document.getElementById('plaintext').value = '');
-                document.getElementById('clearCiphertext').addEventListener('click', () => document.getElementById('ciphertext').value = '');
+                document.getElementById('clearPlaintext').addEventListener('click', () => {
+                    document.getElementById('plaintext').value = '';
+                    document.getElementById('plaintextPreview').innerHTML = '';
+                });
+                document.getElementById('clearCiphertext').addEventListener('click', () => {
+                    document.getElementById('ciphertext').value = '';
+                    document.getElementById('ciphertextPreview').innerHTML = '';
+                });
                 document.getElementById('samplePlaintext').addEventListener('click', () => this.loadSampleText('plain'));
                 document.getElementById('sampleCiphertext').addEventListener('click', () => this.loadSampleText('cipher'));
                 document.getElementById('copyCiphertext').addEventListener('click', () => this.copyToClipboard('ciphertextOutput'));
                 document.getElementById('copyPlaintext').addEventListener('click', () => this.copyToClipboard('plaintextOutput'));
                 document.getElementById('themeToggle').addEventListener('click', () => this.toggleTheme());
+                document.getElementById('saveSettings').addEventListener('click', () => this.saveSettingsToFile());
+                document.getElementById('settingsFileInput').addEventListener('change', (e) => this.loadSettingsFromFile(e));
                 
                 // Settings change events
                 document.getElementById('shiftLayers').addEventListener('change', (e) => this.shiftLayers = Math.max(0, Math.min(3, parseInt(e.target.value) || 0)));
                 document.getElementById('shiftRows').addEventListener('change', (e) => this.shiftRows = Math.max(0, Math.min(3, parseInt(e.target.value) || 0)));
                 document.getElementById('shiftCols').addEventListener('change', (e) => this.shiftCols = Math.max(0, Math.min(3, parseInt(e.target.value) || 0)));
                 document.getElementById('encryptionKey').addEventListener('input', (e) => this.encryptionKey = e.target.value);
+            }
+
+            // Setup text previews for input fields
+            setupTextPreviews() {
+                document.getElementById('plaintext').addEventListener('input', (e) => {
+                    this.updateTextPreview(e.target.value, 'plaintextPreview');
+                });
+                
+                document.getElementById('ciphertext').addEventListener('input', (e) => {
+                    this.updateTextPreview(e.target.value, 'ciphertextPreview');
+                });
+            }
+
+            // Update text preview with highlighted characters
+            updateTextPreview(text, elementId) {
+                if (!this.alphabet || this.cube.length === 0) {
+                    document.getElementById(elementId).innerHTML = '<span class="warning">Please initialize the cube first</span>';
+                    return;
+                }
+
+                let previewHtml = '';
+                for (const char of text) {
+                    const coord = this.findCoordinates(char);
+                    if (coord) {
+                        previewHtml += `<span class="char-highlight" title="Layer: ${coord.layer}, Row: ${coord.row}, Col: ${coord.col}">${this.escapeHtml(char)}</span>`;
+                    } else {
+                        previewHtml += `<span class="char-skipped" title="Character not in cube - will be preserved">${this.escapeHtml(char)}</span>`;
+                    }
+                }
+                
+                document.getElementById(elementId).innerHTML = previewHtml || '<span class="warning">No characters to preview</span>';
+            }
+
+            // Escape HTML for safe display
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
             }
 
             // Theme management
@@ -695,10 +784,99 @@
                 this.initCube();
             }
 
+            // Save settings to file
+            saveSettingsToFile() {
+                if (!this.alphabet || this.cube.length === 0) {
+                    alert("Please initialize the cube first");
+                    return;
+                }
+
+                const settings = {
+                    alphabet: this.alphabet,
+                    fillerChar: this.fillerChar,
+                    encryptionKey: this.encryptionKey,
+                    shuffleAlgorithm: document.getElementById('shuffleAlgorithm').value,
+                    shiftLayers: this.shiftLayers,
+                    shiftRows: this.shiftRows,
+                    shiftCols: this.shiftCols,
+                    cube: this.cube
+                };
+
+                const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'trifid_cipher_settings.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            // Load settings from file
+            loadSettingsFromFile(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const settings = JSON.parse(e.target.result);
+                        
+                        // Validate settings
+                        if (!settings.alphabet || settings.alphabet.length !== 64) {
+                            throw new Error("Invalid alphabet in settings file");
+                        }
+                        
+                        if (!settings.fillerChar || settings.fillerChar.length !== 1) {
+                            throw new Error("Invalid filler character in settings file");
+                        }
+                        
+                        if (settings.alphabet.includes(settings.fillerChar)) {
+                            throw new Error("Filler character must not be in alphabet");
+                        }
+
+                        // Apply settings
+                        document.getElementById('alphabet').value = settings.alphabet;
+                        document.getElementById('filler').value = settings.fillerChar;
+                        document.getElementById('encryptionKey').value = settings.encryptionKey || '';
+                        document.getElementById('shuffleAlgorithm').value = settings.shuffleAlgorithm || 'fisher-yates';
+                        document.getElementById('shiftLayers').value = settings.shiftLayers || 1;
+                        document.getElementById('shiftRows').value = settings.shiftRows || 1;
+                        document.getElementById('shiftCols').value = settings.shiftCols || 1;
+                        
+                        this.shiftLayers = settings.shiftLayers || 1;
+                        this.shiftRows = settings.shiftRows || 1;
+                        this.shiftCols = settings.shiftCols || 1;
+                        this.encryptionKey = settings.encryptionKey || '';
+                        
+                        // Initialize cube with loaded settings
+                        this.initCube();
+                        
+                        // Show success message
+                        const statusElement = document.getElementById('alphabetStatus');
+                        statusElement.innerHTML = `<i class="fas fa-check-circle"></i> Settings loaded successfully from file`;
+                        statusElement.classList.add('alert-success');
+                        statusElement.style.display = 'block';
+                        
+                    } catch (error) {
+                        const statusElement = document.getElementById('alphabetStatus');
+                        statusElement.innerHTML = `<i class="fas fa-exclamation-circle"></i> Error loading settings: ${error.message}`;
+                        statusElement.classList.add('alert-error');
+                        statusElement.style.display = 'block';
+                        console.error("Error loading settings:", error);
+                    }
+                };
+                reader.readAsText(file);
+                
+                // Reset file input
+                event.target.value = '';
+            }
+
             // Load sample text
             loadSampleText(type) {
                 const samples = {
-                    plain: "This is a secret message to encrypt using the Trifid cipher!",
+                    plain: "This is a secret message to encrypt using the Trifid cipher! It contains numbers 123 and symbols +.",
                     cipher: ""
                 };
 
@@ -708,7 +886,9 @@
                 }
 
                 const elementId = type === 'plain' ? 'plaintext' : 'ciphertext';
+                const previewId = type === 'plain' ? 'plaintextPreview' : 'ciphertextPreview';
                 document.getElementById(elementId).value = samples[type];
+                this.updateTextPreview(samples[type], previewId);
             }
 
             // Initialize the 4×4×4 cube
@@ -773,6 +953,10 @@
                     this.cube.push(currentLayer);
                 }
 
+                // Update text previews
+                this.updateTextPreview(document.getElementById('plaintext').value, 'plaintextPreview');
+                this.updateTextPreview(document.getElementById('ciphertext').value, 'ciphertextPreview');
+
                 // Update UI
                 statusElement.innerHTML = `<i class="fas fa-check-circle"></i> Cube initialized successfully with 64 characters + filler`;
                 statusElement.classList.add('alert-success');
@@ -809,6 +993,10 @@
 
                 // Update visualization
                 this.visualizeCube();
+                
+                // Update text previews
+                this.updateTextPreview(document.getElementById('plaintext').value, 'plaintextPreview');
+                this.updateTextPreview(document.getElementById('ciphertext').value, 'ciphertextPreview');
                 
                 // Show status
                 const statusElement = document.getElementById('alphabetStatus');
@@ -1013,7 +1201,7 @@
 
             // Encrypt plaintext
             encrypt() {
-                const plaintext = document.getElementById('plaintext').value.trim();
+                const plaintext = document.getElementById('plaintext').value;
                 if (!plaintext) {
                     alert("Please enter some text to encrypt");
                     return;
@@ -1028,13 +1216,14 @@
                 let stepsHTML = `
                     <div class="card">
                         <h3><i class="fas fa-list-ol"></i> Step 1: Prepare Plaintext</h3>
-                        <p><strong>Original plaintext:</strong> ${plaintext}</p>
+                        <p><strong>Original plaintext:</strong> ${this.escapeHtml(plaintext)}</p>
                         <p>Processing each character...</p>
                     </div>
                 `;
 
                 // Step 1: Convert each character to coordinates
                 let coordinates = [];
+                let skippedChars = [];
                 let coordTable = `
                     <div class="card">
                         <h3><i class="fas fa-map-marked-alt"></i> Step 2: Convert Characters to Coordinates</h3>
@@ -1056,24 +1245,49 @@
                         coordinates.push(coord);
                         coordTable += `
                             <tr>
-                                <td>${char}</td>
+                                <td>${this.escapeHtml(char)}</td>
                                 <td>${coord.layer}</td>
                                 <td>${coord.row}</td>
                                 <td>${coord.col}</td>
                             </tr>
                         `;
                     } else {
-                        // Skip characters not in cube
+                        // Track skipped characters
+                        skippedChars.push(char);
                         coordTable += `
                             <tr>
-                                <td>${char}</td>
-                                <td colspan="3" class="error">(Not in cube)</td>
+                                <td>${this.escapeHtml(char)}</td>
+                                <td colspan="3" class="error">(Not in cube - preserved)</td>
                             </tr>
                         `;
                     }
                 }
                 coordTable += `</tbody></table></div>`;
                 stepsHTML += coordTable;
+
+                // Show warning if skipped characters were found
+                if (skippedChars.length > 0) {
+                    stepsHTML += `
+                        <div class="card">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Notice: Preserved Characters</h3>
+                            <p>The following characters were not found in the cube and will be preserved as-is in the ciphertext:</p>
+                            <p>${skippedChars.map(c => `<span class="char-skipped">${this.escapeHtml(c)}</span>`).join(' ')}</p>
+                        </div>
+                    `;
+                }
+
+                // If no valid characters found, return original text
+                if (coordinates.length === 0) {
+                    document.getElementById('encryptionResult').style.display = 'block';
+                    document.getElementById('ciphertextOutput').textContent = plaintext;
+                    document.getElementById('encryptionSteps').innerHTML = stepsHTML + `
+                        <div class="card">
+                            <h3><i class="fas fa-info-circle"></i> No Encryption Performed</h3>
+                            <p>No characters in the plaintext were found in the cube. The ciphertext is identical to the plaintext.</p>
+                        </div>
+                    `;
+                    return;
+                }
 
                 // Step 2: Create three streams
                 let layersStream = coordinates.map(c => c.layer).join('');
@@ -1124,7 +1338,7 @@
                                 <td>${layer}</td>
                                 <td>${row}</td>
                                 <td>${col}</td>
-                                <td>${char}</td>
+                                <td>${this.escapeHtml(char)}</td>
                             </tr>
                         `;
                     } else {
@@ -1133,7 +1347,7 @@
                         tripletTable += `
                             <tr>
                                 <td>${triplet}</td>
-                                <td colspan="4" class="error">(Incomplete triplet)</td>
+                                <td colspan="4" class="error">(Incomplete triplet - using filler)</td>
                             </tr>
                         `;
                     }
@@ -1141,15 +1355,53 @@
                 tripletTable += `</tbody></table></div>`;
                 stepsHTML += tripletTable;
 
+                // Reinsert skipped characters at their original positions
+                if (skippedChars.length > 0) {
+                    let originalIndex = 0;
+                    let cipherIndex = 0;
+                    let finalCiphertext = '';
+                    
+                    for (let char of plaintext) {
+                        const coord = this.findCoordinates(char);
+                        if (coord) {
+                            // Take next character from ciphertext
+                            if (cipherIndex < ciphertext.length) {
+                                finalCiphertext += ciphertext[cipherIndex++];
+                            } else {
+                                finalCiphertext += this.fillerChar;
+                            }
+                        } else {
+                            // Preserve original character
+                            finalCiphertext += char;
+                        }
+                    }
+                    
+                    // Add any remaining ciphertext characters
+                    if (cipherIndex < ciphertext.length) {
+                        finalCiphertext += ciphertext.substring(cipherIndex);
+                    }
+                    
+                    ciphertext = finalCiphertext;
+                    
+                    stepsHTML += `
+                        <div class="card">
+                            <h3><i class="fas fa-exchange-alt"></i> Step 5: Reinsert Preserved Characters</h3>
+                            <p>Non-alphabet characters have been reinserted at their original positions.</p>
+                            <p><strong>Final ciphertext length:</strong> ${ciphertext.length} characters</p>
+                        </div>
+                    `;
+                }
+
                 // Display results
                 document.getElementById('encryptionResult').style.display = 'block';
                 document.getElementById('ciphertextOutput').textContent = ciphertext;
                 document.getElementById('encryptionSteps').innerHTML = stepsHTML;
+                this.updateTextPreview(ciphertext, 'ciphertextPreview');
             }
 
             // Decrypt ciphertext
             decrypt() {
-                const ciphertext = document.getElementById('ciphertext').value.trim();
+                const ciphertext = document.getElementById('ciphertext').value;
                 if (!ciphertext) {
                     alert("Please enter some text to decrypt");
                     return;
@@ -1164,13 +1416,14 @@
                 let stepsHTML = `
                     <div class="card">
                         <h3><i class="fas fa-list-ol"></i> Step 1: Prepare Ciphertext</h3>
-                        <p><strong>Original ciphertext:</strong> ${ciphertext}</p>
+                        <p><strong>Original ciphertext:</strong> ${this.escapeHtml(ciphertext)}</p>
                         <p>Processing each character...</p>
                     </div>
                 `;
 
                 // Step 1: Convert each character to coordinates
                 let coordinates = [];
+                let skippedChars = [];
                 let coordTable = `
                     <div class="card">
                         <h3><i class="fas fa-map-marked-alt"></i> Step 2: Convert Characters to Coordinates</h3>
@@ -1192,24 +1445,49 @@
                         coordinates.push(coord);
                         coordTable += `
                             <tr>
-                                <td>${char}</td>
+                                <td>${this.escapeHtml(char)}</td>
                                 <td>${coord.layer}</td>
                                 <td>${coord.row}</td>
                                 <td>${coord.col}</td>
                             </tr>
                         `;
                     } else {
-                        // Skip characters not in cube
+                        // Track skipped characters
+                        skippedChars.push(char);
                         coordTable += `
                             <tr>
-                                <td>${char}</td>
-                                <td colspan="3" class="error">(Not in cube)</td>
+                                <td>${this.escapeHtml(char)}</td>
+                                <td colspan="3" class="error">(Not in cube - preserved)</td>
                             </tr>
                         `;
                     }
                 }
                 coordTable += `</tbody></table></div>`;
                 stepsHTML += coordTable;
+
+                // Show warning if skipped characters were found
+                if (skippedChars.length > 0) {
+                    stepsHTML += `
+                        <div class="card">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Notice: Preserved Characters</h3>
+                            <p>The following characters were not found in the cube and will be preserved as-is in the plaintext:</p>
+                            <p>${skippedChars.map(c => `<span class="char-skipped">${this.escapeHtml(c)}</span>`).join(' ')}</p>
+                        </div>
+                    `;
+                }
+
+                // If no valid characters found, return original text
+                if (coordinates.length === 0) {
+                    document.getElementById('decryptionResult').style.display = 'block';
+                    document.getElementById('plaintextOutput').textContent = ciphertext;
+                    document.getElementById('decryptionSteps').innerHTML = stepsHTML + `
+                        <div class="card">
+                            <h3><i class="fas fa-info-circle"></i> No Decryption Performed</h3>
+                            <p>No characters in the ciphertext were found in the cube. The plaintext is identical to the ciphertext.</p>
+                        </div>
+                    `;
+                    return;
+                }
 
                 // Step 2: Create coordinate sequence
                 let coordSequence = '';
@@ -1270,17 +1548,55 @@
                             <td>${layer}</td>
                             <td>${row}</td>
                             <td>${col}</td>
-                            <td>${char}</td>
+                            <td>${this.escapeHtml(char)}</td>
                         </tr>
                     `;
                 }
                 reconstructionTable += `</tbody></table></div>`;
                 stepsHTML += reconstructionTable;
 
+                // Reinsert skipped characters at their original positions
+                if (skippedChars.length > 0) {
+                    let originalIndex = 0;
+                    let plainIndex = 0;
+                    let finalPlaintext = '';
+                    
+                    for (let char of ciphertext) {
+                        const coord = this.findCoordinates(char);
+                        if (coord) {
+                            // Take next character from plaintext
+                            if (plainIndex < plaintext.length) {
+                                finalPlaintext += plaintext[plainIndex++];
+                            } else {
+                                finalPlaintext += this.fillerChar;
+                            }
+                        } else {
+                            // Preserve original character
+                            finalPlaintext += char;
+                        }
+                    }
+                    
+                    // Add any remaining plaintext characters
+                    if (plainIndex < plaintext.length) {
+                        finalPlaintext += plaintext.substring(plainIndex);
+                    }
+                    
+                    plaintext = finalPlaintext;
+                    
+                    stepsHTML += `
+                        <div class="card">
+                            <h3><i class="fas fa-exchange-alt"></i> Step 6: Reinsert Preserved Characters</h3>
+                            <p>Non-alphabet characters have been reinserted at their original positions.</p>
+                            <p><strong>Final plaintext length:</strong> ${plaintext.length} characters</p>
+                        </div>
+                    `;
+                }
+
                 // Display results
                 document.getElementById('decryptionResult').style.display = 'block';
                 document.getElementById('plaintextOutput').textContent = plaintext;
                 document.getElementById('decryptionSteps').innerHTML = stepsHTML;
+                this.updateTextPreview(plaintext, 'plaintextPreview');
             }
 
             // Helper function to chunk strings for display
