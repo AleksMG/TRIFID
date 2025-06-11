@@ -1,5 +1,3 @@
-// Trifid Cipher Worker Implementation
-
 // English language statistics for scoring
 const ENGLISH_FREQUENCY = {
     'A': 0.08167, 'B': 0.01492, 'C': 0.02782, 'D': 0.04253, 'E': 0.12702,
@@ -18,7 +16,14 @@ const ENGLISH_TRIGRAMS = {
     "HIS": 0.0024, "VER": 0.0024, "ITH": 0.0023, "STH": 0.0023, "OTH": 0.0022
 };
 
-// Score text based on letter and trigram frequency
+const ENGLISH_QUADGRAMS = {
+    "TION": 0.0015, "NTHE": 0.0014, "THER": 0.0013, "THAT": 0.0012, 
+    "OFTHE": 0.0011, "INGT": 0.0010, "THEM": 0.0009, "THEI": 0.0009,
+    "DTHE": 0.0009, "ATIO": 0.0009, "ETHE": 0.0008, "THIS": 0.0008,
+    "TING": 0.0008, "WITH": 0.0008, "STHE": 0.0008, "HERE": 0.0007
+};
+
+// Score text based on letter, trigram and quadgram frequency
 function scoreText(text) {
     // Letter frequency score
     let letterScore = 0;
@@ -45,25 +50,42 @@ function scoreText(text) {
     
     // Trigram score
     let trigramScore = 0;
+    let trigramCount = 0;
     text = text.toUpperCase();
     for (let i = 0; i < text.length - 2; i++) {
         const trigram = text.substr(i, 3);
         if (ENGLISH_TRIGRAMS[trigram]) {
             trigramScore += ENGLISH_TRIGRAMS[trigram];
+            trigramCount++;
         }
     }
     
-    // Normalize trigram score by text length
+    // Quadgram score
+    let quadgramScore = 0;
+    let quadgramCount = 0;
+    for (let i = 0; i < text.length - 3; i++) {
+        const quadgram = text.substr(i, 4);
+        if (ENGLISH_QUADGRAMS[quadgram]) {
+            quadgramScore += ENGLISH_QUADGRAMS[quadgram];
+            quadgramCount++;
+        }
+    }
+    
+    // Normalize scores by text length
     trigramScore = trigramScore / (text.length / 3);
+    quadgramScore = quadgramScore / (text.length / 4);
     
     // Combined score (weighted)
-    return (letterScore * 0.3 + trigramScore * 0.7) * 100;
+    return {
+        score: (letterScore * 0.2 + trigramScore * 0.5 + quadgramScore * 0.3) * 100,
+        trigrams: trigramCount,
+        quadgrams: quadgramCount
+    };
 }
 
-// Generate Trifid cube with key-based permutation
-function generateCube(alphabet, size, key = '') {
-    const cube = [];
-    const cubeSize = size * size * size;
+// Generate Trifid cube with key-based permutation (3×3×3 only)
+function generateCube(alphabet, key = '') {
+    const cube = [[[], [], []], [[], [], []], [[], [], []]];
     
     // Create keyed alphabet
     let keyedAlphabet = '';
@@ -84,13 +106,11 @@ function generateCube(alphabet, size, key = '') {
         }
     }
     
-    // Fill the cube
-    for (let layer = 0; layer < size; layer++) {
-        cube.push([]);
-        for (let row = 0; row < size; row++) {
-            cube[layer].push([]);
-            for (let col = 0; col < size; col++) {
-                const index = layer * size * size + row * size + col;
+    // Fill the cube (3 layers, 3 rows, 3 columns)
+    for (let layer = 0; layer < 3; layer++) {
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                const index = layer * 9 + row * 3 + col;
                 cube[layer][row][col] = keyedAlphabet[index % keyedAlphabet.length];
             }
         }
@@ -120,13 +140,12 @@ function generateSequentialKey(index, alphabet, keyLength) {
 
 // Full Trifid decryption with key
 function decryptTrifid(ciphertext, cube, key, period = 5) {
-    const size = cube.length;
     const coords = {};
     
     // Build coordinate map
-    for (let l = 0; l < size; l++) {
-        for (let r = 0; r < size; r++) {
-            for (let c = 0; c < size; c++) {
+    for (let l = 0; l < 3; l++) {
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
                 coords[cube[l][r][c]] = [l, r, c];
             }
         }
@@ -134,6 +153,9 @@ function decryptTrifid(ciphertext, cube, key, period = 5) {
     
     let decrypted = '';
     const groupSize = period;
+    let allLayers = [];
+    let allRows = [];
+    let allCols = [];
     
     // Process ciphertext in groups
     for (let i = 0; i < ciphertext.length; i += groupSize) {
@@ -141,31 +163,31 @@ function decryptTrifid(ciphertext, cube, key, period = 5) {
         if (group.length === 0) break;
         
         // Extract coordinates for each character in group
-        const layers = [];
-        const rows = [];
-        const cols = [];
-        
         for (const char of group) {
             const coord = coords[char];
             if (coord) {
-                layers.push(coord[0]);
-                rows.push(coord[1]);
-                cols.push(coord[2]);
+                allLayers.push(coord[0]);
+                allRows.push(coord[1]);
+                allCols.push(coord[2]);
             } else {
                 // Handle missing characters (use first layer as default)
-                layers.push(0);
-                rows.push(0);
-                cols.push(0);
+                allLayers.push(0);
+                allRows.push(0);
+                allCols.push(0);
             }
         }
-        
-        // Reconstruct plaintext from coordinates
-        for (let j = 0; j < group.length; j++) {
-            const l = layers[j];
-            const r = rows[j];
-            const c = cols[j];
-            decrypted += cube[l][r][c];
-        }
+    }
+    
+    // Combine all coordinates
+    const allCoords = allLayers.concat(allRows).concat(allCols);
+    
+    // Reconstruct plaintext from coordinates
+    for (let i = 0; i < allCoords.length; i += 3) {
+        if (i + 2 >= allCoords.length) break;
+        const l = allCoords[i];
+        const r = allCoords[i+1];
+        const c = allCoords[i+2];
+        decrypted += cube[l][r][c];
     }
     
     return decrypted;
@@ -177,75 +199,94 @@ self.onmessage = function(e) {
         type, 
         ciphertext, 
         alphabet, 
-        cubeSize, 
         searchMode, 
         knownPlaintext, 
         keyLength,
+        period,
         workerId,
-        totalWorkers,
-        keysToTest
+        keysToTest,
+        startIndex
     } = e.data;
+    
+    if (type === 'pause') {
+        // Pause processing (we'll just wait for resume)
+        self.paused = true;
+        return;
+    }
+    
+    if (type === 'resume') {
+        // Resume processing
+        self.paused = false;
+        return;
+    }
     
     if (type !== 'start') return;
     
     let bestScore = -Infinity;
-    let bestText = '';
-    let bestKey = '';
     let keysTested = 0;
     const startTime = performance.now();
-    
-    // Generate base cube without key permutation
-    const baseCube = generateCube(alphabet, cubeSize);
+    let lastUpdateTime = startTime;
     
     // Main cracking loop
     for (let i = 0; i < keysToTest; i++) {
+        // Check for pause messages
+        if (self.paused) {
+            while (self.paused) {
+                // Wait for resume message
+                Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+            }
+        }
+        
         // Generate test key based on search mode
         let testKey;
         if (searchMode === 'full') {
-            testKey = generateRandomKey(10, alphabet);
-        } else if (searchMode === 'partial') {
-            testKey = generateSequentialKey(i, alphabet, keyLength);
-        } else {
-            // Known plaintext mode - generate keys that might contain the known text
             testKey = generateRandomKey(keyLength, alphabet);
+        } else {
+            // For partial or known plaintext, use sequential keys from our assigned range
+            testKey = generateSequentialKey(startIndex + i, alphabet, keyLength);
         }
         
         // Generate cube with key permutation
-        const cube = generateCube(alphabet, cubeSize, testKey);
+        const cube = generateCube(alphabet, testKey);
         
         // Decrypt with current key
-        const decrypted = decryptTrifid(ciphertext, cube, testKey);
-        const score = scoreText(decrypted);
+        const decrypted = decryptTrifid(ciphertext, cube, testKey, period);
+        const scoreData = scoreText(decrypted);
+        const score = scoreData.score;
         
         // Check for known plaintext if provided
         let valid = true;
         if (knownPlaintext && knownPlaintext.length > 0) {
-            valid = decrypted.includes(knownPlaintext);
+            valid = decrypted.toUpperCase().includes(knownPlaintext);
         }
         
         // Send progress update periodically
         keysTested++;
-        if (keysTested % 100 === 0 || i === keysToTest - 1) {
+        const now = performance.now();
+        if (now - lastUpdateTime > 1000 || i === keysToTest - 1) {
             self.postMessage({
                 type: 'progress',
                 keysTested: keysTested,
-                progress: (i / keysToTest) * 100
+                cube: cube,
+                key: testKey
             });
+            lastUpdateTime = now;
         }
         
         // Send result if it's good
         if (valid && score > bestScore * 0.9) { // Send anything close to best
             if (score > bestScore) {
                 bestScore = score;
-                bestText = decrypted;
-                bestKey = testKey;
             }
             
             self.postMessage({
                 type: 'result',
                 key: testKey,
                 text: decrypted,
-                score: score
+                score: score,
+                trigrams: scoreData.trigrams,
+                quadgrams: scoreData.quadgrams,
+                cube: cube
             });
         }
     }
