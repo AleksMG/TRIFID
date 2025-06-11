@@ -1278,57 +1278,60 @@
         }
 
         // Full Trifid decryption with key
-        function decryptTrifid(ciphertext, cube, key, period = 5) {
-            const size = cube.length;
-            const coords = {};
-            
-            // Build coordinate map
-            for (let l = 0; l < size; l++) {
-                for (let r = 0; r < size; r++) {
-                    for (let c = 0; c < size; c++) {
-                        coords[cube[l][r][c]] = [l, r, c];
-                    }
-                }
+function decryptTrifid(ciphertext, cube, key, period = 5) {
+    const size = cube.length;
+    const coords = {};
+    
+    // Build coordinate map
+    for (let l = 0; l < size; l++) {
+        for (let r = 0; r < size; r++) {
+            for (let c = 0; c < size; c++) {
+                coords[cube[l][r][c]] = [l, r, c];
             }
-            
-            let decrypted = '';
-            const groupSize = period;
-            
-            // Process ciphertext in groups
-            for (let i = 0; i < ciphertext.length; i += groupSize) {
-                const group = ciphertext.substr(i, groupSize);
-                if (group.length === 0) break;
-                
-                // Extract coordinates for each character in group
-                const layers = [];
-                const rows = [];
-                const cols = [];
-                
-                for (const char of group) {
-                    const coord = coords[char];
-                    if (coord) {
-                        layers.push(coord[0]);
-                        rows.push(coord[1]);
-                        cols.push(coord[2]);
-                    } else {
-                        // Handle missing characters (use first layer as default)
-                        layers.push(0);
-                        rows.push(0);
-                        cols.push(0);
-                    }
-                }
-                
-                // Reconstruct plaintext from coordinates
-                for (let j = 0; j < group.length; j++) {
-                    const l = layers[j];
-                    const r = rows[j];
-                    const c = cols[j];
-                    decrypted += cube[l][r][c];
-                }
-            }
-            
-            return decrypted;
         }
+    }
+    
+    let decrypted = '';
+    const groupSize = period;
+    let allLayers = [];
+    let allRows = [];
+    let allCols = [];
+    
+    // Process ciphertext in groups
+    for (let i = 0; i < ciphertext.length; i += groupSize) {
+        const group = ciphertext.substr(i, groupSize);
+        if (group.length === 0) break;
+        
+        // Extract coordinates for each character in group
+        for (const char of group) {
+            const coord = coords[char];
+            if (coord) {
+                allLayers.push(coord[0]);
+                allRows.push(coord[1]);
+                allCols.push(coord[2]);
+            } else {
+                // Handle missing characters (use first layer as default)
+                allLayers.push(0);
+                allRows.push(0);
+                allCols.push(0);
+            }
+        }
+    }
+    
+    // Combine all coordinates
+    const allCoords = allLayers.concat(allRows).concat(allCols);
+    
+    // Reconstruct plaintext from coordinates
+    for (let i = 0; i < allCoords.length; i += 3) {
+        if (i + 2 >= allCoords.length) break;
+        const l = allCoords[i];
+        const r = allCoords[i+1];
+        const c = allCoords[i+2];
+        decrypted += cube[l][r][c];
+    }
+    
+    return decrypted;
+}
 
         // Main worker function
         self.onmessage = function(e) {
