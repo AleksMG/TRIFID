@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Trifid Cipher Cracker</title>
+    <title>Professional Trifid Cipher Cracker</title>
     <style>
         :root {
             --primary: #007AFF;
@@ -483,7 +483,7 @@
         const config = {
             workerPath: 'trifid-worker.js',
             maxWorkers: 16,
-            resultsLimit: 20, // Only show top 20 results
+            resultsLimit: 20,
             maxKeysPerWorker: 100000,
             updateInterval: 1000,
             maxResultsToKeep: 100
@@ -653,13 +653,10 @@
             let total;
             
             if (searchMode === 'full') {
-                // For full search, we're using random keys so we can't calculate total
                 total = Infinity;
             } else if (searchMode === 'partial') {
-                // Partial search: alphabet_size ^ key_length
                 total = Math.pow(alphabet.length, keyLength);
             } else {
-                // Known plaintext mode - hard to estimate
                 total = Infinity;
             }
             
@@ -690,7 +687,7 @@
                 return;
             }
             
-            const requiredChars = 27; // For 3×3×3 cube
+            const requiredChars = 27;
             if (alphabet.length < requiredChars) {
                 showError(`Alphabet needs at least ${requiredChars} characters for 3×3×3 cube!`);
                 return;
@@ -731,10 +728,261 @@
             elements.progressBar.style.width = '0%';
             elements.status.textContent = 'Initializing workers...';
             
-            // Create workers
+            // Create worker blob
+            const workerBlob = new Blob([`
+                class TrifidWorker {
+                    constructor() {
+                        this.ngramStats = this.loadNgramStats();
+                        this.weights = { letters: 0.5, bigrams: 1.0, trigrams: 1.5, quadgrams: 2.0 };
+                        this.paused = false;
+                    }
+
+                    loadNgramStats() {
+                        return {
+                            letters: { 'E': 12.7, 'T': 9.1, 'A': 8.2, 'O': 7.5, 'I': 6.9, 'N': 6.7, 'S': 6.3, 'H': 6.0, 'R': 5.9, 'D': 4.2, 'L': 4.0, 'C': 2.7, 'U': 2.7, 'M': 2.4, 'W': 2.3, 'F': 2.2, 'G': 2.0, 'Y': 1.9, 'P': 1.9, 'B': 1.4, 'V': 0.9, 'K': 0.7, 'J': 0.1, 'X': 0.1, 'Q': 0.1, 'Z': 0.0, '?': 0.1, '*': 0.1 },
+                            bigrams: { 'TH': 15.2, 'HE': 12.5, 'IN': 9.4, 'ER': 9.4, 'AN': 8.2, 'RE': 6.8, 'ND': 6.3, 'AT': 5.9, 'ON': 5.7, 'NT': 5.6, 'HA': 5.6, 'ES': 5.6, 'ST': 5.5, 'EN': 5.5, 'ED': 5.3, 'TO': 5.2, 'IT': 5.0, 'OU': 5.0, 'EA': 4.7, 'HI': 4.6, 'IS': 4.6, 'OR': 4.3, 'TI': 3.4, 'AS': 3.3, 'TE': 2.7, 'ET': 1.9, 'NG': 1.8, 'OF': 1.6, 'AL': 0.9, 'DE': 0.9, 'SE': 0.8, 'LE': 0.8, 'SA': 0.6, 'SI': 0.5, 'AR': 0.4 },
+                            trigrams: { 'THE': 18.1, 'AND': 7.3, 'ING': 7.2, 'ENT': 4.2, 'ION': 4.2, 'HER': 3.6, 'FOR': 3.4, 'THA': 3.3, 'NTH': 3.3, 'INT': 3.2, 'ERE': 3.1, 'TIO': 3.1, 'TER': 3.0, 'EST': 2.8, 'ERS': 2.8, 'ATI': 2.6, 'HAT': 2.6, 'ATE': 2.5, 'ALL': 2.5, 'ETH': 2.4, 'HIS': 2.4, 'VER': 2.4, 'HIM': 2.3, 'OFT': 2.2, 'ITH': 2.1, 'FTH': 2.1, 'STH': 2.1, 'OTH': 2.1, 'DTH': 2.1, 'ONT': 2.0, 'EDT': 2.0, 'ARE': 2.0, 'REA': 1.9, 'EAR': 1.9, 'RES': 1.9, 'CON': 1.9, 'EVE': 1.9, 'PER': 1.9, 'ECT': 1.9 },
+                            quadgrams: { 'TION': 15.0, 'NTHE': 14.0, 'THER': 13.0, 'THAT': 12.0, 'OFTH': 11.0, 'FTHE': 11.0, 'THES': 10.0, 'WITH': 10.0, 'INTH': 9.0, 'ATIO': 9.0, 'OTHE': 8.0, 'ETHE': 7.0, 'TOTH': 7.0, 'DTHE': 7.0, 'INGT': 7.0, 'SAND': 6.0, 'STHE': 6.0, 'HERE': 6.0, 'THEC': 6.0, 'MENT': 6.0, 'THEM': 5.0, 'THEP': 5.0, 'RTHE': 5.0, 'TAND': 5.0, 'THEY': 5.0, 'NGTH': 5.0, 'IONS': 5.0, 'EDTH': 4.0, 'ANDT': 4.0, 'OFTHE': 4.0, 'TIVE': 4.0, 'FROM': 4.0, 'THIS': 4.0, 'TING': 4.0, 'THEI': 4.0, 'WHIC': 3.0, 'HICH': 3.0, 'INCE': 3.0, 'ECTI': 3.0, 'HAVE': 3.0, 'CTIO': 3.0, 'SSIO': 3.0, 'COMM': 3.0, 'LLY': 2.0 }
+                        };
+                    }
+
+                    async start(data) {
+                        this.initParams(data);
+                        await this.processKeys();
+                        self.postMessage({ type: 'complete', keysTested: this.keysTested, workerId: this.workerId });
+                    }
+
+                    initParams(data) {
+                        this.ciphertext = data.ciphertext.replace(/[^A-Z?*]/g, '');
+                        this.alphabet = data.alphabet;
+                        this.keyLength = data.keyLength;
+                        this.period = data.period;
+                        this.knownPlaintext = data.knownPlaintext?.toUpperCase();
+                        this.workerId = data.workerId;
+                        this.keysToTest = data.keysToTest;
+                        this.startIndex = data.startIndex;
+                        this.keysTested = 0;
+                    }
+
+                    async processKeys() {
+                        const batchSize = 5000;
+                        let batchResults = [];
+                        let lastProgressTime = 0;
+
+                        while (this.keysTested < this.keysToTest) {
+                            if (this.paused) await this.waitWhilePaused();
+                            
+                            const key = this.generateKey(this.startIndex + this.keysTested);
+                            const result = this.processKey(key);
+                            
+                            if (result) batchResults.push(result);
+                            this.keysTested++;
+
+                            const now = Date.now();
+                            if (batchResults.length >= batchSize || now - lastProgressTime > 1000 || this.keysTested >= this.keysToTest) {
+                                this.sendResults(batchResults);
+                                batchResults = [];
+                                lastProgressTime = now;
+                            }
+
+                            // Yield to event loop periodically
+                            if (this.keysTested % 100 === 0) {
+                                await new Promise(resolve => setTimeout(resolve, 0));
+                            }
+                        }
+                    }
+
+                    generateKey(index) {
+                        let key = '';
+                        let remaining = index;
+                        
+                        for (let i = 0; i < this.keyLength; i++) {
+                            const charIndex = remaining % this.alphabet.length;
+                            key = this.alphabet[charIndex] + key;
+                            remaining = Math.floor(remaining / this.alphabet.length);
+                        }
+                        
+                        return key;
+                    }
+
+                    processKey(key) {
+                        try {
+                            const cube = this.generateCube(key);
+                            const plaintext = this.decrypt(cube);
+                            const score = this.scoreText(plaintext);
+
+                            if (!this.knownPlaintext || plaintext.includes(this.knownPlaintext)) {
+                                return {
+                                    key,
+                                    text: plaintext,
+                                    score: score.total,
+                                    cube,
+                                    counts: score.counts,
+                                    workerId: this.workerId
+                                };
+                            }
+                            return null;
+                        } catch (error) {
+                            console.error('Error processing key:', error);
+                            return null;
+                        }
+                    }
+
+                    generateCube(key) {
+                        const keyChars = [...new Set(key.toUpperCase().split('').filter(c => this.alphabet.includes(c)))];
+                        const remainingChars = this.alphabet.split('').filter(c => !keyChars.includes(c));
+                        const keyedAlphabet = [...keyChars, ...remainingChars].join('');
+
+                        const cube = [];
+                        for (let i = 0; i < 27; i++) {
+                            const layer = Math.floor(i / 9);
+                            const row = Math.floor((i % 9) / 3);
+                            const col = i % 3;
+                            
+                            if (!cube[layer]) cube[layer] = [];
+                            if (!cube[layer][row]) cube[layer][row] = [];
+                            
+                            cube[layer][row][col] = keyedAlphabet[i % keyedAlphabet.length];
+                        }
+                        return cube;
+                    }
+
+                    decrypt(cube) {
+                        const coordMap = new Map();
+                        for (let l = 0; l < 3; l++) {
+                            for (let r = 0; r < 3; r++) {
+                                for (let c = 0; c < 3; c++) {
+                                    coordMap.set(cube[l][r][c], [l, r, c]);
+                                }
+                            }
+                        }
+
+                        const groups = [];
+                        for (let i = 0; i < this.ciphertext.length; i += this.period) {
+                            groups.push(this.ciphertext.slice(i, i + this.period));
+                        }
+
+                        const allCoords = groups.flatMap(group => 
+                            [...group].map(c => coordMap.get(c) || [0, 0, 0])
+                        ).flat();
+
+                        let plaintext = '';
+                        for (let i = 0; i < allCoords.length; i += 3) {
+                            if (i + 2 >= allCoords.length) break;
+                            plaintext += cube[allCoords[i]][allCoords[i+1]][allCoords[i+2]];
+                        }
+
+                        return plaintext;
+                    }
+
+                    scoreText(text) {
+                        const cleanText = text.toUpperCase().replace(/[^A-Z?*]/g, '');
+                        const counts = this.countNGrams(cleanText);
+                        return this.calculateScore(counts, cleanText.length);
+                    }
+
+                    countNGrams(text) {
+                        const counts = { letters: {}, bigrams: {}, trigrams: {}, quadgrams: {} };
+                        
+                        for (let i = 0; i < text.length; i++) {
+                            counts.letters[text[i]] = (counts.letters[text[i]] || 0) + 1;
+                            
+                            if (i < text.length - 1) {
+                                const bigram = text.substr(i, 2);
+                                if (this.ngramStats.bigrams[bigram]) {
+                                    counts.bigrams[bigram] = (counts.bigrams[bigram] || 0) + 1;
+                                }
+                            }
+                            
+                            if (i < text.length - 2) {
+                                const trigram = text.substr(i, 3);
+                                if (this.ngramStats.trigrams[trigram]) {
+                                    counts.trigrams[trigram] = (counts.trigrams[trigram] || 0) + 1;
+                                }
+                            }
+                            
+                            if (i < text.length - 3) {
+                                const quadgram = text.substr(i, 4);
+                                if (this.ngramStats.quadgrams[quadgram]) {
+                                    counts.quadgrams[quadgram] = (counts.quadgrams[quadgram] || 0) + 1;
+                                }
+                            }
+                        }
+                        
+                        return counts;
+                    }
+
+                    calculateScore(counts, length) {
+                        const scores = {};
+                        let total = 0;
+                        const weightSum = Object.values(this.weights).reduce((a, b) => a + b, 0);
+                        
+                        for (const type of ['letters', 'bigrams', 'trigrams', 'quadgrams']) {
+                            scores[type] = 0;
+                            
+                            for (const gram in counts[type]) {
+                                if (this.ngramStats[type][gram]) {
+                                    const expected = (this.ngramStats[type][gram] / 100) * (length / Math.pow(10, type.length - 1));
+                                    const observed = counts[type][gram];
+                                    scores[type] += Math.log10((observed + 1) / (expected + 1));
+                                }
+                            }
+                            
+                            total += scores[type] * (this.weights[type] / weightSum);
+                        }
+                        
+                        return { total, counts };
+                    }
+
+                    sendResults(results) {
+                        if (results.length > 0) {
+                            self.postMessage({
+                                type: 'results',
+                                results,
+                                keysTested: this.keysTested,
+                                workerId: this.workerId
+                            });
+                        }
+                        
+                        self.postMessage({
+                            type: 'progress',
+                            keysTested: this.keysTested,
+                            workerId: this.workerId
+                        });
+                    }
+
+                    async waitWhilePaused() {
+                        while (this.paused) {
+                            await new Promise(resolve => setTimeout(resolve, 100));
+                        }
+                    }
+                }
+
+                const worker = new TrifidWorker();
+
+                self.onmessage = async (e) => {
+                    const { type, data } = e.data;
+                    
+                    switch (type) {
+                        case 'start':
+                            await worker.start(data);
+                            break;
+                        case 'pause':
+                            worker.paused = true;
+                            break;
+                        case 'resume':
+                            worker.paused = false;
+                            break;
+                    }
+                };
+            `], { type: 'application/javascript' });
+
+            // Create worker URL
+            const workerUrl = URL.createObjectURL(workerBlob);
+            
             try {
                 for (let i = 0; i < workerCount; i++) {
-                    const worker = new Worker(config.workerPath);
+                    const worker = new Worker(workerUrl);
                     
                     worker.onmessage = function(e) {
                         handleWorkerMessage(worker, e.data);
@@ -776,20 +1024,15 @@
                 state.workers.forEach((worker, index) => {
                     const workerId = index;
                     const startIndex = index * keysPerWorker;
-                    const endIndex = startIndex + keysPerWorker - 1;
-                    
-                    state.workerKeyRanges[workerId] = { start: startIndex, end: endIndex };
                     
                     worker.postMessage({
                         type: 'start',
                         ciphertext: ciphertext,
                         alphabet: alphabet,
-                        searchMode: searchMode,
-                        knownPlaintext: knownPlaintext,
                         keyLength: keyLength,
                         period: period,
+                        knownPlaintext: knownPlaintext,
                         workerId: workerId,
-                        totalWorkers: workerCount,
                         keysToTest: keysPerWorker,
                         startIndex: startIndex
                     });
@@ -807,35 +1050,37 @@
         function handleWorkerMessage(worker, data) {
             switch (data.type) {
                 case 'progress':
-                    state.keysTested += data.keysTested;
+                    state.keysTested = data.keysTested;
                     if (data.cube) {
                         state.currentCube = data.cube;
                         state.currentKey = data.key;
                     }
                     break;
                     
-                case 'result':
-                    state.resultsCount++;
+                case 'results':
+                    data.results.forEach(result => {
+                        state.resultsCount++;
+                        
+                        // Add to results if score is in top N
+                        if (state.results.length < config.maxResultsToKeep || result.score > state.results[state.results.length-1].score) {
+                            state.results.push(result);
+                            // Keep results sorted by score descending
+                            state.results.sort((a, b) => b.score - a.score);
+                            // Trim to max results to keep
+                            if (state.results.length > config.maxResultsToKeep) {
+                                state.results.pop();
+                            }
+                            
+                            // Update best score if needed
+                            if (result.score > state.bestScore) {
+                                state.bestScore = result.score;
+                                elements.bestScore.textContent = `Best: ${result.score.toFixed(2)}`;
+                            }
+                        }
+                    });
                     
-                    // Add to results if score is in top N
-                    if (state.results.length < config.maxResultsToKeep || data.score > state.results[state.results.length-1].score) {
-                        state.results.push(data);
-                        // Keep results sorted by score descending
-                        state.results.sort((a, b) => b.score - a.score);
-                        // Trim to max results to keep
-                        if (state.results.length > config.maxResultsToKeep) {
-                            state.results.pop();
-                        }
-                        
-                        // Update best score if needed
-                        if (data.score > state.bestScore) {
-                            state.bestScore = data.score;
-                            elements.bestScore.textContent = `Best: ${data.score.toFixed(2)}`;
-                        }
-                        
-                        // Update UI
-                        updateResultsDisplay();
-                    }
+                    // Update UI
+                    updateResultsDisplay();
                     break;
                     
                 case 'complete':
@@ -947,8 +1192,8 @@
                 <div class="result-text">${displayText}</div>
                 <div class="result-score">
                     <span>Score: ${data.score.toFixed(4)}</span>
-                    <span>Trigrams: ${data.trigrams || 0}</span>
-                    <span>Quadgrams: ${data.quadgrams || 0}</span>
+                    <span>Trigrams: ${data.counts?.trigrams ? Object.keys(data.counts.trigrams).length : 0}</span>
+                    <span>Quadgrams: ${data.counts?.quadgrams ? Object.keys(data.counts.quadgrams).length : 0}</span>
                 </div>
             `;
             
@@ -1080,8 +1325,8 @@
                 <div class="result-text">${highlightPatterns(bestResult.text)}</div>
                 <div class="result-score">
                     <span>Score: ${bestResult.score.toFixed(4)}</span>
-                    <span>Trigrams: ${bestResult.trigrams || 0}</span>
-                    <span>Quadgrams: ${bestResult.quadgrams || 0}</span>
+                    <span>Trigrams: ${bestResult.counts?.trigrams ? Object.keys(bestResult.counts.trigrams).length : 0}</span>
+                    <span>Quadgrams: ${bestResult.counts?.quadgrams ? Object.keys(bestResult.counts.quadgrams).length : 0}</span>
                 </div>
             </div>`;
             
@@ -1144,316 +1389,6 @@
         
         // Initialize when page loads
         window.addEventListener('load', init);
-    </script>
-
-    <script>
-        // Worker implementation will be in a separate file
-        const workerBlob = new Blob([`
-        // English language statistics for scoring
-        const ENGLISH_FREQUENCY = {
-            'A': 0.08167, 'B': 0.01492, 'C': 0.02782, 'D': 0.04253, 'E': 0.12702,
-            'F': 0.02228, 'G': 0.02015, 'H': 0.06094, 'I': 0.06966, 'J': 0.00153,
-            'K': 0.00772, 'L': 0.04025, 'M': 0.02406, 'N': 0.06749, 'O': 0.07507,
-            'P': 0.01929, 'Q': 0.00095, 'R': 0.05987, 'S': 0.06327, 'T': 0.09056,
-            'U': 0.02758, 'V': 0.00978, 'W': 0.02360, 'X': 0.00150, 'Y': 0.01974,
-            'Z': 0.00074
-        };
-
-        const ENGLISH_TRIGRAMS = {
-            "THE": 0.0181, "AND": 0.0073, "ING": 0.0072, "ENT": 0.0042, "ION": 0.0042,
-            "HER": 0.0036, "FOR": 0.0034, "THA": 0.0033, "NTH": 0.0033, "INT": 0.0032,
-            "ERE": 0.0031, "TIO": 0.0031, "TER": 0.0030, "EST": 0.0028, "ERS": 0.0028,
-            "ATI": 0.0026, "HAT": 0.0026, "ATE": 0.0025, "ALL": 0.0025, "ETH": 0.0024,
-            "HIS": 0.0024, "VER": 0.0024, "ITH": 0.0023, "STH": 0.0023, "OTH": 0.0022
-        };
-
-        const ENGLISH_QUADGRAMS = {
-            "TION": 0.0015, "NTHE": 0.0014, "THER": 0.0013, "THAT": 0.0012, 
-            "OFTHE": 0.0011, "INGT": 0.0010, "THEM": 0.0009, "THEI": 0.0009,
-            "DTHE": 0.0009, "ATIO": 0.0009, "ETHE": 0.0008, "THIS": 0.0008,
-            "TING": 0.0008, "WITH": 0.0008, "STHE": 0.0008, "HERE": 0.0007
-        };
-
-        // Score text based on letter, trigram and quadgram frequency
-        function scoreText(text) {
-            // Letter frequency score
-            let letterScore = 0;
-            const letterCounts = {};
-            let totalLetters = 0;
-            
-            for (const char of text.toUpperCase()) {
-                if (ENGLISH_FREQUENCY[char]) {
-                    letterCounts[char] = (letterCounts[char] || 0) + 1;
-                    totalLetters++;
-                }
-            }
-            
-            // Calculate chi-squared statistic
-            for (const char in ENGLISH_FREQUENCY) {
-                const expected = ENGLISH_FREQUENCY[char] * totalLetters;
-                const observed = letterCounts[char] || 0;
-                const difference = observed - expected;
-                letterScore += (difference * difference) / expected;
-            }
-            
-            // Invert so higher is better
-            letterScore = 1 / (1 + letterScore);
-            
-            // Trigram score
-            let trigramScore = 0;
-            let trigramCount = 0;
-            text = text.toUpperCase();
-            for (let i = 0; i < text.length - 2; i++) {
-                const trigram = text.substr(i, 3);
-                if (ENGLISH_TRIGRAMS[trigram]) {
-                    trigramScore += ENGLISH_TRIGRAMS[trigram];
-                    trigramCount++;
-                }
-            }
-            
-            // Quadgram score
-            let quadgramScore = 0;
-            let quadgramCount = 0;
-            for (let i = 0; i < text.length - 3; i++) {
-                const quadgram = text.substr(i, 4);
-                if (ENGLISH_QUADGRAMS[quadgram]) {
-                    quadgramScore += ENGLISH_QUADGRAMS[quadgram];
-                    quadgramCount++;
-                }
-            }
-            
-            // Normalize scores by text length
-            trigramScore = trigramScore / (text.length / 3);
-            quadgramScore = quadgramScore / (text.length / 4);
-            
-            // Combined score (weighted)
-            return {
-                score: (letterScore * 0.2 + trigramScore * 0.5 + quadgramScore * 0.3) * 100,
-                trigrams: trigramCount,
-                quadgrams: quadgramCount
-            };
-        }
-
-        // Generate Trifid cube with key-based permutation (3×3×3 only)
-        function generateCube(alphabet, key = '') {
-            const cube = [[[], [], []], [[], [], []], [[], [], []]];
-            
-            // Create keyed alphabet
-            let keyedAlphabet = '';
-            const usedChars = new Set();
-            
-            // Add key characters first (without duplicates)
-            for (const char of key.toUpperCase()) {
-                if (!usedChars.has(char) && alphabet.includes(char)) {
-                    keyedAlphabet += char;
-                    usedChars.add(char);
-                }
-            }
-            
-            // Add remaining alphabet characters
-            for (const char of alphabet) {
-                if (!usedChars.has(char)) {
-                    keyedAlphabet += char;
-                }
-            }
-            
-            // Fill the cube (3 layers, 3 rows, 3 columns)
-            for (let layer = 0; layer < 3; layer++) {
-                for (let row = 0; row < 3; row++) {
-                    for (let col = 0; col < 3; col++) {
-                        const index = layer * 9 + row * 3 + col;
-                        cube[layer][row][col] = keyedAlphabet[index % keyedAlphabet.length];
-                    }
-                }
-            }
-            
-            return cube;
-        }
-
-        // Generate random key of specified length
-        function generateRandomKey(length, alphabet) {
-            let key = '';
-            for (let i = 0; i < length; i++) {
-                key += alphabet[Math.floor(Math.random() * alphabet.length)];
-            }
-            return key;
-        }
-
-        // Generate sequential key for exhaustive search
-        function generateSequentialKey(index, alphabet, keyLength) {
-            let key = '';
-            for (let i = 0; i < keyLength; i++) {
-                key += alphabet[index % alphabet.length];
-                index = Math.floor(index / alphabet.length);
-            }
-            return key;
-        }
-
-        // Full Trifid decryption with key
-        function decryptTrifid(ciphertext, cube, key, period = 5) {
-            const coords = {};
-            
-            // Build coordinate map
-            for (let l = 0; l < 3; l++) {
-                for (let r = 0; r < 3; r++) {
-                    for (let c = 0; c < 3; c++) {
-                        coords[cube[l][r][c]] = [l, r, c];
-                    }
-                }
-            }
-            
-            let decrypted = '';
-            const groupSize = period;
-            let allLayers = [];
-            let allRows = [];
-            let allCols = [];
-            
-            // Process ciphertext in groups
-            for (let i = 0; i < ciphertext.length; i += groupSize) {
-                const group = ciphertext.substr(i, groupSize);
-                if (group.length === 0) break;
-                
-                // Extract coordinates for each character in group
-                for (const char of group) {
-                    const coord = coords[char];
-                    if (coord) {
-                        allLayers.push(coord[0]);
-                        allRows.push(coord[1]);
-                        allCols.push(coord[2]);
-                    } else {
-                        // Handle missing characters (use first layer as default)
-                        allLayers.push(0);
-                        allRows.push(0);
-                        allCols.push(0);
-                    }
-                }
-            }
-            
-            // Combine all coordinates
-            const allCoords = allLayers.concat(allRows).concat(allCols);
-            
-            // Reconstruct plaintext from coordinates
-            for (let i = 0; i < allCoords.length; i += 3) {
-                if (i + 2 >= allCoords.length) break;
-                const l = allCoords[i];
-                const r = allCoords[i+1];
-                const c = allCoords[i+2];
-                decrypted += cube[l][r][c];
-            }
-            
-            return decrypted;
-        }
-
-        // Main worker function
-        self.onmessage = function(e) {
-            const { 
-                type, 
-                ciphertext, 
-                alphabet, 
-                searchMode, 
-                knownPlaintext, 
-                keyLength,
-                period,
-                workerId,
-                keysToTest,
-                startIndex
-            } = e.data;
-            
-            if (type === 'pause') {
-                // Pause processing (we'll just wait for resume)
-                self.paused = true;
-                return;
-            }
-            
-            if (type === 'resume') {
-                // Resume processing
-                self.paused = false;
-                return;
-            }
-            
-            if (type !== 'start') return;
-            
-            let bestScore = -Infinity;
-            let keysTested = 0;
-            const startTime = performance.now();
-            let lastUpdateTime = startTime;
-            
-            // Main cracking loop
-            for (let i = 0; i < keysToTest; i++) {
-                // Check for pause messages
-                if (self.paused) {
-                    while (self.paused) {
-                        // Wait for resume message
-                        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
-                    }
-                }
-                
-                // Generate test key based on search mode
-                let testKey;
-                if (searchMode === 'full') {
-                    testKey = generateRandomKey(keyLength, alphabet);
-                } else {
-                    // For partial or known plaintext, use sequential keys from our assigned range
-                    testKey = generateSequentialKey(startIndex + i, alphabet, keyLength);
-                }
-                
-                // Generate cube with key permutation
-                const cube = generateCube(alphabet, testKey);
-                
-                // Decrypt with current key
-                const decrypted = decryptTrifid(ciphertext, cube, testKey, period);
-                const scoreData = scoreText(decrypted);
-                const score = scoreData.score;
-                
-                // Check for known plaintext if provided
-                let valid = true;
-                if (knownPlaintext && knownPlaintext.length > 0) {
-                    valid = decrypted.toUpperCase().includes(knownPlaintext);
-                }
-                
-                // Send progress update periodically
-                keysTested++;
-                const now = performance.now();
-                if (now - lastUpdateTime > 1000 || i === keysToTest - 1) {
-                    self.postMessage({
-                        type: 'progress',
-                        keysTested: keysTested,
-                        cube: cube,
-                        key: testKey
-                    });
-                    lastUpdateTime = now;
-                }
-                
-                // Send result if it's good
-                if (valid && score > bestScore * 0.9) { // Send anything close to best
-                    if (score > bestScore) {
-                        bestScore = score;
-                    }
-                    
-                    self.postMessage({
-                        type: 'result',
-                        key: testKey,
-                        text: decrypted,
-                        score: score,
-                        trigrams: scoreData.trigrams,
-                        quadgrams: scoreData.quadgrams,
-                        cube: cube
-                    });
-                }
-            }
-            
-            self.postMessage({ 
-                type: 'complete',
-                keysTested: keysTested
-            });
-        };
-        `], { type: 'application/javascript' });
-        
-        // Create worker URL
-        const workerUrl = URL.createObjectURL(workerBlob);
-        
-        // Override the worker path in config
-        config.workerPath = workerUrl;
     </script>
 </body>
 </html>
