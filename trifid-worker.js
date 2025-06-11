@@ -1,26 +1,18 @@
 class TrifidWorker {
     constructor() {
-        // Инициализация статистики n-грамм
         this.ngramStats = this.loadFullNgramStats();
-        
-        // Веса для различных типов n-грамм
         this.weights = {
             letters: 0.5,
             bigrams: 1.0,
             trigrams: 1.5,
             quadgrams: 2.0
         };
-        
-        // Флаги управления состоянием воркера
         this.paused = false;
         this.shouldStop = false;
-        
-        // Статистика производительности
         this.keysPerSecond = 0;
         this.lastCalculationTime = 0;
     }
 
-    // Полная загрузка статистики n-грамм английского языка
     loadFullNgramStats() {
         return {
             letters: {
@@ -77,7 +69,6 @@ class TrifidWorker {
     }
 
     initParams(data) {
-        // Очистка и нормализация входных данных
         this.ciphertext = data.ciphertext.replace(/[^A-Z?*]/g, '').toUpperCase();
         this.alphabet = data.alphabet.toUpperCase();
         this.keyLength = parseInt(data.keyLength) || 5;
@@ -85,29 +76,19 @@ class TrifidWorker {
         this.knownPlaintext = data.knownPlaintext?.toUpperCase();
         this.workerId = data.workerId || 0;
         
-        // Расчет общего количества ключей для проверки
-        const totalPossibleKeys = Math.pow(this.alphabet.length, this.keyLength);
-        this.keysToTest = data.keysToTest || totalPossibleKeys;
-        this.startIndex = data.startIndex || 0;
-        
-        // Сброс счетчиков
-        this.keysTested = 0;
-        this.keysPerSecond = 0;
-        this.lastCalculationTime = 0;
-        
-        // Валидация алфавита
         if (this.alphabet.length !== 27) {
-            throw new Error('Alphabet must contain exactly 27 characters for Trifid cipher');
+            throw new Error('Alphabet must contain exactly 27 characters');
         }
+
+        this.keysToTest = data.keysToTest || Math.pow(this.alphabet.length, this.keyLength);
+        this.startIndex = data.startIndex || 0;
+        this.keysTested = 0;
     }
 
     async processKeys() {
         const BATCH_SIZE = 1000;
-        const PROGRESS_INTERVAL = 1000; // Отправлять прогресс каждую секунду
         let batchResults = [];
         let lastProgressTime = 0;
-        let lastKeyTime = performance.now();
-        let processedInSecond = 0;
 
         while (this.keysTested < this.keysToTest && !this.shouldStop) {
             if (this.paused) {
@@ -115,34 +96,21 @@ class TrifidWorker {
                 continue;
             }
 
-            // Расчет скорости обработки (ключей в секунду)
-            const currentTime = performance.now();
-            if (currentTime - lastKeyTime >= 1000) {
-                this.keysPerSecond = processedInSecond;
-                processedInSecond = 0;
-                lastKeyTime = currentTime;
-            }
-
-            // Генерация и обработка ключа
             const key = this.generateKey(this.startIndex + this.keysTested);
             const result = this.processKey(key);
             
             if (result) batchResults.push(result);
             this.keysTested++;
-            processedInSecond++;
 
-            // Отправка промежуточных результатов
-            const now = Date.now();
             if (batchResults.length >= BATCH_SIZE || 
-                now - lastProgressTime >= PROGRESS_INTERVAL || 
+                Date.now() - lastProgressTime >= 1000 || 
                 this.keysTested >= this.keysToTest) {
                 
                 this.sendResults(batchResults);
                 batchResults = [];
-                lastProgressTime = now;
+                lastProgressTime = Date.now();
             }
 
-            // Периодически даем циклу событий дышать
             if (this.keysTested % 100 === 0) {
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
@@ -153,10 +121,9 @@ class TrifidWorker {
         let key = '';
         let remaining = index;
         
-        // Генерация ключа заданной длины
         for (let i = 0; i < this.keyLength; i++) {
             const charIndex = remaining % this.alphabet.length;
-            key = this.alphabet[charIndex] + key; // Добавляем символы в начало
+            key = this.alphabet[charIndex] + key;
             remaining = Math.floor(remaining / this.alphabet.length);
         }
         
@@ -165,16 +132,10 @@ class TrifidWorker {
 
     processKey(key) {
         try {
-            // Генерация куба на основе ключа
             const cube = this.generateCube(key);
-            
-            // Дешифровка текста
             const plaintext = this.decrypt(cube);
-            
-            // Оценка качества расшифровки
             const score = this.scoreText(plaintext);
 
-            // Проверка на соответствие известному тексту (если задан)
             if (!this.knownPlaintext || plaintext.includes(this.knownPlaintext)) {
                 return {
                     key: key,
@@ -193,7 +154,6 @@ class TrifidWorker {
     }
 
     generateCube(key) {
-        // Уникальные символы ключа в порядке их появления
         const uniqueKeyChars = [];
         const seenChars = new Set();
         
@@ -204,7 +164,6 @@ class TrifidWorker {
             }
         }
 
-        // Оставшиеся символы алфавита
         const remainingChars = [];
         for (const char of this.alphabet) {
             if (!seenChars.has(char)) {
@@ -212,17 +171,13 @@ class TrifidWorker {
             }
         }
 
-        // Объединенный алфавит с приоритетом ключевых символов
         const keyedAlphabet = uniqueKeyChars.concat(remainingChars).join('');
-
-        // Построение 3D куба 3x3x3
         const cube = [[[], [], []], [[], [], []], [[], [], []]];
         
         for (let i = 0; i < 27; i++) {
             const layer = Math.floor(i / 9);
             const row = Math.floor((i % 9) / 3);
             const col = i % 3;
-            
             cube[layer][row][col] = keyedAlphabet[i % keyedAlphabet.length];
         }
         
@@ -230,95 +185,65 @@ class TrifidWorker {
     }
 
     decrypt(cube) {
-        // Создание карты символов в координаты
         const coordMap = new Map();
         for (let layer = 0; layer < 3; layer++) {
             for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 3; col++) {
-                    const char = cube[layer][row][col];
-                    coordMap.set(char, [layer, row, col]);
+                    coordMap.set(cube[layer][row][col], [layer, row, col]);
                 }
             }
         }
 
-        // Разбиение шифротекста на группы по периоду
         const groups = [];
         for (let i = 0; i < this.ciphertext.length; i += this.period) {
             groups.push(this.ciphertext.slice(i, i + this.period));
         }
 
-        // Преобразование символов в координаты
         const allCoords = [];
         for (const group of groups) {
             for (const char of group) {
                 const coords = coordMap.get(char);
-                if (coords) {
-                    allCoords.push(...coords);
-                }
+                if (coords) allCoords.push(...coords);
             }
         }
 
-        // Сборка расшифрованного текста из координат
         let plaintext = '';
         for (let i = 0; i < allCoords.length; i += 3) {
             if (i + 2 >= allCoords.length) break;
-            
-            const layer = allCoords[i];
-            const row = allCoords[i + 1];
-            const col = allCoords[i + 2];
-            
-            plaintext += cube[layer][row][col];
+            const [l, r, c] = [allCoords[i], allCoords[i+1], allCoords[i+2]];
+            plaintext += cube[l][r][c];
         }
 
         return plaintext;
     }
 
     scoreText(text) {
-        // Очистка текста от неалфавитных символов
         const cleanText = text.toUpperCase().replace(/[^A-Z]/g, '');
         if (cleanText.length === 0) return { total: -Infinity, counts: {} };
-
-        // Подсчет n-грамм
-        const counts = this.countNGrams(cleanText);
         
-        // Расчет оценки
+        const counts = this.countNGrams(cleanText);
         return this.calculateScore(counts, cleanText.length);
     }
 
     countNGrams(text) {
-        const counts = {
-            letters: {},
-            bigrams: {},
-            trigrams: {},
-            quadgrams: {}
-        };
+        const counts = { letters: {}, bigrams: {}, trigrams: {}, quadgrams: {} };
 
-        // Подсчет отдельных букв
         for (const char of text) {
             counts.letters[char] = (counts.letters[char] || 0) + 1;
         }
 
-        // Подсчет биграмм, триграмм и квадграмм
         for (let i = 0; i < text.length; i++) {
             if (i < text.length - 1) {
                 const bigram = text.substr(i, 2);
-                if (this.ngramStats.bigrams.hasOwnProperty(bigram)) {
-                    counts.bigrams[bigram] = (counts.bigrams[bigram] || 0) + 1;
-                }
+                counts.bigrams[bigram] = (counts.bigrams[bigram] || 0) + 1;
             }
-
             if (i < text.length - 2) {
                 const trigram = text.substr(i, 3);
-                if (this.ngramStats.trigrams.hasOwnProperty(trigram)) {
-                    counts.trigrams[trigram] = (counts.trigrams[trigram] || 0) + 1;
-                }
+                counts.trigrams[trigram] = (counts.trigrams[trigram] || 0) + 1;
             }
-
             if (i < text.length - 3) {
                 const quadgram = text.substr(i, 4);
-                if (this.ngramStats.quadgrams.hasOwnProperty(quadgram)) {
-                    counts.quadgrams[quadgram] = (counts.quadgrams[quadgram] || 0) + 1;
-                }
+                counts.quadgrams[quadgram] = (counts.quadgrams[quadgram] || 0) + 1;
             }
         }
 
@@ -326,60 +251,61 @@ class TrifidWorker {
     }
 
     calculateScore(counts, length) {
-        const scores = {
-            letters: 0,
-            bigrams: 0,
-            trigrams: 0,
-            quadgrams: 0
-        };
-        
         let total = 0;
-        const weightSum = this.weights.letters + this.weights.bigrams + 
-                         this.weights.trigrams + this.weights.quadgrams;
+        const weightSum = Object.values(this.weights).reduce((a, b) => a + b, 0);
 
-        // Расчет оценки для букв
+        // Letters score
+        let lettersScore = 0;
         for (const char in counts.letters) {
-            if (this.ngramStats.letters.hasOwnProperty(char)) {
+            if (this.ngramStats.letters[char]) {
                 const expected = (this.ngramStats.letters[char] / 100) * length;
-                const observed = counts.letters[char];
-                scores.letters += Math.log10((observed + 1) / (expected + 1));
+                lettersScore += Math.log10((counts.letters[char] + 1) / (expected + 1));
             }
         }
 
-        // Расчет оценки для биграмм
+        // Bigrams score
+        let bigramsScore = 0;
         for (const gram in counts.bigrams) {
-            if (this.ngramStats.bigrams.hasOwnProperty(gram)) {
-                const expected = (this.ngramStats.bigrams[gram] / 100) * (length / 10);
-                const observed = counts.bigrams[gram];
-                scores.bigrams += Math.log10((observed + 1) / (expected + 1));
+            if (this.ngramStats.bigrams[gram]) {
+                const expected = (this.ngramStats.bigrams[gram] / 100) * (length - 1);
+                bigramsScore += Math.log10((counts.bigrams[gram] + 1) / (expected + 1));
             }
         }
 
-        // Расчет оценки для триграмм
+        // Trigrams score
+        let trigramsScore = 0;
         for (const gram in counts.trigrams) {
-            if (this.ngramStats.trigrams.hasOwnProperty(gram)) {
-                const expected = (this.ngramStats.trigrams[gram] / 100) * (length / 100);
-                const observed = counts.trigrams[gram];
-                scores.trigrams += Math.log10((observed + 1) / (expected + 1));
+            if (this.ngramStats.trigrams[gram]) {
+                const expected = (this.ngramStats.trigrams[gram] / 100) * (length - 2);
+                trigramsScore += Math.log10((counts.trigrams[gram] + 1) / (expected + 1));
             }
         }
 
-        // Расчет оценки для квадграмм
+        // Quadgrams score
+        let quadgramsScore = 0;
         for (const gram in counts.quadgrams) {
-            if (this.ngramStats.quadgrams.hasOwnProperty(gram)) {
-                const expected = (this.ngramStats.quadgrams[gram] / 100) * (length / 1000);
-                const observed = counts.quadgrams[gram];
-                scores.quadgrams += Math.log10((observed + 1) / (expected + 1));
+            if (this.ngramStats.quadgrams[gram]) {
+                const expected = (this.ngramStats.quadgrams[gram] / 100) * (length - 3);
+                quadgramsScore += Math.log10((counts.quadgrams[gram] + 1) / (expected + 1));
             }
         }
 
-        // Взвешенная сумма оценок
-        total = (scores.letters * this.weights.letters +
-                scores.bigrams * this.weights.bigrams +
-                scores.trigrams * this.weights.trigrams +
-                scores.quadgrams * this.weights.quadgrams) / weightSum;
+        total = (
+            lettersScore * this.weights.letters +
+            bigramsScore * this.weights.bigrams +
+            trigramsScore * this.weights.trigrams +
+            quadgramsScore * this.weights.quadgrams
+        ) / weightSum;
 
-        return { total, counts };
+        return { 
+            total, 
+            counts: {
+                letters: Object.keys(counts.letters).length,
+                bigrams: Object.keys(counts.bigrams).length,
+                trigrams: Object.keys(counts.trigrams).length,
+                quadgrams: Object.keys(counts.quadgrams).length
+            }
+        };
     }
 
     sendResults(results) {
@@ -388,17 +314,9 @@ class TrifidWorker {
                 type: 'results',
                 results: results,
                 keysTested: this.keysTested,
-                keysPerSecond: this.keysPerSecond,
                 workerId: this.workerId
             });
         }
-
-        self.postMessage({
-            type: 'progress',
-            keysTested: this.keysTested,
-            keysPerSecond: this.keysPerSecond,
-            workerId: this.workerId
-        });
     }
 
     sendCompletion() {
@@ -418,49 +336,24 @@ class TrifidWorker {
     }
 
     async waitWhilePaused() {
-        const MAX_PAUSE_TIME = 60000; // Максимальное время паузы - 1 минута
-        const startTime = Date.now();
-
         while (this.paused && !this.shouldStop) {
-            if (Date.now() - startTime > MAX_PAUSE_TIME) {
-                this.paused = false;
-                break;
-            }
             await new Promise(resolve => setTimeout(resolve, 100));
         }
     }
 }
 
-// Инициализация и управление воркером
 const worker = new TrifidWorker();
 
 self.onmessage = async (e) => {
     const { type, data } = e.data;
-
     try {
         switch (type) {
-            case 'start':
-                await worker.start(data);
-                break;
-            case 'pause':
-                worker.paused = true;
-                break;
-            case 'resume':
-                worker.paused = false;
-                break;
-            case 'stop':
-                worker.shouldStop = true;
-                break;
-            default:
-                console.warn('Unknown message type:', type);
+            case 'start': await worker.start(data); break;
+            case 'pause': worker.paused = true; break;
+            case 'resume': worker.paused = false; break;
+            case 'stop': worker.shouldStop = true; break;
         }
     } catch (error) {
         worker.sendError(error);
     }
-};
-
-// Глобальный обработчик ошибок
-self.onerror = (error) => {
-    worker.sendError(error);
-    return true; // Предотвращаем вывод ошибки по умолчанию
 };
