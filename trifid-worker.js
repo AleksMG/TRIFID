@@ -1,3 +1,4 @@
+// trifid-worker.js
 class TrifidWorker {
     constructor() {
         this.ngramStats = this.loadFullNgramStats();
@@ -9,8 +10,7 @@ class TrifidWorker {
         };
         this.paused = false;
         this.shouldStop = false;
-        this.keysPerSecond = 0;
-        this.lastCalculationTime = 0;
+        this.keysTested = 0;
     }
 
     loadFullNgramStats() {
@@ -21,7 +21,7 @@ class TrifidWorker {
                 'K': 0.772, 'L': 4.025, 'M': 2.406, 'N': 6.749, 'O': 7.507,
                 'P': 1.929, 'Q': 0.095, 'R': 5.987, 'S': 6.327, 'T': 9.056,
                 'U': 2.758, 'V': 0.978, 'W': 2.360, 'X': 0.150, 'Y': 1.974,
-                'Z': 0.074, '?': 0.1
+                'Z': 0.074, '?': 0.1, '*': 0.1
             },
             bigrams: {
                 'TH': 1.52, 'HE': 1.28, 'IN': 0.94, 'ER': 0.94, 'AN': 0.82,
@@ -60,73 +60,64 @@ class TrifidWorker {
 
     async start(data) {
         try {
+            this.validateInput(data);
             this.initParams(data);
-            await this.processKeys();
-            this.sendCompletion();
+            
+            const results = [];
+            for (let i = 0; i < this.keysToTest && !this.shouldStop; i++) {
+                if (this.paused) await this.waitWhilePaused();
+                
+                const key = this.generateKey(this.startIndex + i);
+                const result = this.processKey(key);
+                if (result) results.push(result);
+                this.keysTested++;
+
+                if (results.length >= 100 || i === this.keysToTest - 1) {
+                    self.postMessage({
+                        type: 'results',
+                        results: results,
+                        keysTested: this.keysTested
+                    });
+                    results.length = 0;
+                }
+            }
+
+            self.postMessage({ type: 'complete', keysTested: this.keysTested });
         } catch (error) {
             this.sendError(error);
         }
     }
 
-    initParams(data) {
-        this.ciphertext = data.ciphertext.replace(/[^A-Z?*]/g, '').toUpperCase();
-        this.alphabet = data.alphabet.toUpperCase();
-        this.keyLength = parseInt(data.keyLength) || 5;
-        this.period = parseInt(data.period) || 5;
-        this.knownPlaintext = data.knownPlaintext?.toUpperCase();
-        this.workerId = data.workerId || 0;
-        
-        if (this.alphabet.length !== 27) {
-            throw new Error('Alphabet must contain exactly 27 characters');
+    validateInput(data) {
+        if (!data.ciphertext || typeof data.ciphertext !== 'string') {
+            throw new Error('Неверный шифротекст');
         }
-
-        this.keysToTest = data.keysToTest || Math.pow(this.alphabet.length, this.keyLength);
-        this.startIndex = data.startIndex || 0;
-        this.keysTested = 0;
+        if (!data.alphabet || data.alphabet.length !== 27) {
+            throw new Error('Алфавит должен содержать 27 символов');
+        }
+        if (isNaN(data.keyLength) || data.keyLength < 1) {
+            throw new Error('Неверная длина ключа');
+        }
     }
 
-    async processKeys() {
-        const BATCH_SIZE = 1000;
-        let batchResults = [];
-        let lastProgressTime = 0;
-
-        while (this.keysTested < this.keysToTest && !this.shouldStop) {
-            if (this.paused) {
-                await this.waitWhilePaused();
-                continue;
-            }
-
-            const key = this.generateKey(this.startIndex + this.keysTested);
-            const result = this.processKey(key);
-            
-            if (result) batchResults.push(result);
-            this.keysTested++;
-
-            if (batchResults.length >= BATCH_SIZE || 
-                Date.now() - lastProgressTime >= 1000 || 
-                this.keysTested >= this.keysToTest) {
-                
-                this.sendResults(batchResults);
-                batchResults = [];
-                lastProgressTime = Date.now();
-            }
-
-            if (this.keysTested % 100 === 0) {
-                await new Promise(resolve => setTimeout(resolve, 0));
-            }
-        }
+    initParams(data) {
+        this.ciphertext = data.ciphertext.toUpperCase().replace(/[^A-Z?*]/g, '');
+        this.alphabet = data.alphabet.toUpperCase();
+        this.keyLength = parseInt(data.keyLength);
+        this.period = parseInt(data.period) || 5;
+        this.knownPlaintext = data.knownPlaintext?.toUpperCase();
+        this.keysToTest = data.keysToTest || Math.pow(this.alphabet.length, this.keyLength);
+        this.startIndex = data.startIndex || 0;
     }
 
     generateKey(index) {
         let key = '';
         let remaining = index;
-        
         for (let i = 0; i < this.keyLength; i++) {
             const charIndex = remaining % this.alphabet.length;
             key = this.alphabet[charIndex] + key;
             remaining = Math.floor(remaining / this.alphabet.length);
         }
-        
         return key;
     }
 
@@ -138,69 +129,48 @@ class TrifidWorker {
 
             if (!this.knownPlaintext || plaintext.includes(this.knownPlaintext)) {
                 return {
-                    key: key,
+                    key,
                     text: plaintext,
                     score: score.total,
-                    cube: cube,
-                    counts: score.counts,
-                    workerId: this.workerId
+                    cube,
+                    counts: score.counts
                 };
             }
             return null;
         } catch (error) {
-            console.error(`Error processing key ${key}:`, error);
+            console.error(`Ошибка обработки ключа ${key}:`, error);
             return null;
         }
     }
 
     generateCube(key) {
-        const uniqueKeyChars = [];
-        const seenChars = new Set();
-        
-        for (const char of key.toUpperCase()) {
-            if (this.alphabet.includes(char) && !seenChars.has(char)) {
-                uniqueKeyChars.push(char);
-                seenChars.add(char);
-            }
-        }
+        const uniqueKeyChars = [...new Set(key.toUpperCase().split('').filter(c => this.alphabet.includes(c)))];
+        const remainingChars = this.alphabet.split('').filter(c => !uniqueKeyChars.includes(c));
+        const keyedAlphabet = [...uniqueKeyChars, ...remainingChars].join('');
 
-        const remainingChars = [];
-        for (const char of this.alphabet) {
-            if (!seenChars.has(char)) {
-                remainingChars.push(char);
-            }
-        }
-
-        const keyedAlphabet = uniqueKeyChars.concat(remainingChars).join('');
         const cube = [[[], [], []], [[], [], []], [[], [], []]];
-        
         for (let i = 0; i < 27; i++) {
             const layer = Math.floor(i / 9);
             const row = Math.floor((i % 9) / 3);
             const col = i % 3;
-            cube[layer][row][col] = keyedAlphabet[i % keyedAlphabet.length];
+            cube[layer][row][col] = keyedAlphabet[i];
         }
-        
         return cube;
     }
 
     decrypt(cube) {
         const coordMap = new Map();
-        for (let layer = 0; layer < 3; layer++) {
-            for (let row = 0; row < 3; row++) {
-                for (let col = 0; col < 3; col++) {
-                    coordMap.set(cube[layer][row][col], [layer, row, col]);
+        for (let l = 0; l < 3; l++) {
+            for (let r = 0; r < 3; r++) {
+                for (let c = 0; c < 3; c++) {
+                    coordMap.set(cube[l][r][c], [l, r, c]);
                 }
             }
         }
 
-        const groups = [];
-        for (let i = 0; i < this.ciphertext.length; i += this.period) {
-            groups.push(this.ciphertext.slice(i, i + this.period));
-        }
-
         const allCoords = [];
-        for (const group of groups) {
+        for (let i = 0; i < this.ciphertext.length; i += this.period) {
+            const group = this.ciphertext.slice(i, i + this.period);
             for (const char of group) {
                 const coords = coordMap.get(char);
                 if (coords) allCoords.push(...coords);
@@ -213,92 +183,57 @@ class TrifidWorker {
             const [l, r, c] = [allCoords[i], allCoords[i+1], allCoords[i+2]];
             plaintext += cube[l][r][c];
         }
-
         return plaintext;
     }
 
     scoreText(text) {
         const cleanText = text.toUpperCase().replace(/[^A-Z]/g, '');
         if (cleanText.length === 0) return { total: -Infinity, counts: {} };
-        
-        const counts = this.countNGrams(cleanText);
-        return this.calculateScore(counts, cleanText.length);
-    }
 
-    countNGrams(text) {
-        const counts = { letters: {}, bigrams: {}, trigrams: {}, quadgrams: {} };
+        const counts = {
+            letters: {},
+            bigrams: {},
+            trigrams: {},
+            quadgrams: {}
+        };
 
-        for (const char of text) {
+        // Подсчёт n-грамм
+        for (let i = 0; i < cleanText.length; i++) {
+            const char = cleanText[i];
             counts.letters[char] = (counts.letters[char] || 0) + 1;
-        }
 
-        for (let i = 0; i < text.length; i++) {
-            if (i < text.length - 1) {
-                const bigram = text.substr(i, 2);
+            if (i < cleanText.length - 1) {
+                const bigram = cleanText.substr(i, 2);
                 counts.bigrams[bigram] = (counts.bigrams[bigram] || 0) + 1;
             }
-            if (i < text.length - 2) {
-                const trigram = text.substr(i, 3);
+            if (i < cleanText.length - 2) {
+                const trigram = cleanText.substr(i, 3);
                 counts.trigrams[trigram] = (counts.trigrams[trigram] || 0) + 1;
             }
-            if (i < text.length - 3) {
-                const quadgram = text.substr(i, 4);
+            if (i < cleanText.length - 3) {
+                const quadgram = cleanText.substr(i, 4);
                 counts.quadgrams[quadgram] = (counts.quadgrams[quadgram] || 0) + 1;
             }
         }
 
-        return counts;
-    }
-
-    calculateScore(counts, length) {
+        // Расчёт оценки
         let total = 0;
         const weightSum = Object.values(this.weights).reduce((a, b) => a + b, 0);
 
-        // Letters score
-        let lettersScore = 0;
-        for (const char in counts.letters) {
-            if (this.ngramStats.letters[char]) {
-                const expected = (this.ngramStats.letters[char] / 100) * length;
-                lettersScore += Math.log10((counts.letters[char] + 1) / (expected + 1));
+        for (const [type, weight] of Object.entries(this.weights)) {
+            let typeScore = 0;
+            for (const gram in counts[type]) {
+                if (this.ngramStats[type][gram]) {
+                    const expected = (this.ngramStats[type][gram] / 100) * (cleanText.length - gram.length + 1);
+                    const observed = counts[type][gram];
+                    typeScore += Math.log10((observed + 1) / (expected + 1));
+                }
             }
+            total += typeScore * weight;
         }
 
-        // Bigrams score
-        let bigramsScore = 0;
-        for (const gram in counts.bigrams) {
-            if (this.ngramStats.bigrams[gram]) {
-                const expected = (this.ngramStats.bigrams[gram] / 100) * (length - 1);
-                bigramsScore += Math.log10((counts.bigrams[gram] + 1) / (expected + 1));
-            }
-        }
-
-        // Trigrams score
-        let trigramsScore = 0;
-        for (const gram in counts.trigrams) {
-            if (this.ngramStats.trigrams[gram]) {
-                const expected = (this.ngramStats.trigrams[gram] / 100) * (length - 2);
-                trigramsScore += Math.log10((counts.trigrams[gram] + 1) / (expected + 1));
-            }
-        }
-
-        // Quadgrams score
-        let quadgramsScore = 0;
-        for (const gram in counts.quadgrams) {
-            if (this.ngramStats.quadgrams[gram]) {
-                const expected = (this.ngramStats.quadgrams[gram] / 100) * (length - 3);
-                quadgramsScore += Math.log10((counts.quadgrams[gram] + 1) / (expected + 1));
-            }
-        }
-
-        total = (
-            lettersScore * this.weights.letters +
-            bigramsScore * this.weights.bigrams +
-            trigramsScore * this.weights.trigrams +
-            quadgramsScore * this.weights.quadgrams
-        ) / weightSum;
-
-        return { 
-            total, 
+        return {
+            total: total / weightSum,
             counts: {
                 letters: Object.keys(counts.letters).length,
                 bigrams: Object.keys(counts.bigrams).length,
@@ -308,47 +243,26 @@ class TrifidWorker {
         };
     }
 
-    sendResults(results) {
-        if (results.length > 0) {
-            self.postMessage({
-                type: 'results',
-                results: results,
-                keysTested: this.keysTested,
-                workerId: this.workerId
-            });
+    async waitWhilePaused() {
+        while (this.paused && !this.shouldStop) {
+            await new Promise(resolve => setTimeout(resolve, 100));
         }
-    }
-
-    sendCompletion() {
-        self.postMessage({
-            type: 'complete',
-            keysTested: this.keysTested,
-            workerId: this.workerId
-        });
     }
 
     sendError(error) {
         self.postMessage({
             type: 'error',
             error: error.message,
-            workerId: this.workerId
+            stack: error.stack
         });
-    }
-
-    async waitWhilePaused() {
-        while (this.paused && !this.shouldStop) {
-            await new Promise(resolve => setTimeout(resolve, 100));
-        }
     }
 }
 
-const worker = new TrifidWorker();
-
 self.onmessage = async (e) => {
-    const { type, data } = e.data;
+    const worker = new TrifidWorker();
     try {
-        switch (type) {
-            case 'start': await worker.start(data); break;
+        switch (e.data.type) {
+            case 'start': await worker.start(e.data); break;
             case 'pause': worker.paused = true; break;
             case 'resume': worker.paused = false; break;
             case 'stop': worker.shouldStop = true; break;
