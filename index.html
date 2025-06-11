@@ -3,423 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Trifid Cipher Cracker</title>
+    <title>Trifid Cracker Pro | macOS 2030 Edition</title>
     <style>
         :root {
-            --primary: #007AFF;
-            --primary-light: rgba(0, 122, 255, 0.1);
-            --secondary: #34C759;
-            --tertiary: #FF9500;
-            --danger: #FF3B30;
-            --background: #F2F2F7;
-            --card: #FFFFFF;
-            --text: #1C1C1E;
-            --secondary-text: #8E8E93;
-            --border: #D1D1D6;
-            --highlight-plaintext: #FFD700;
-            --highlight-trigram: rgba(52, 199, 89, 0.3);
-            --highlight-quadgram: rgba(0, 122, 255, 0.3);
+            --system-blue: #0A84FF;
+            --system-green: #30D158;
+            --system-orange: #FF9F0A;
+            --system-red: #FF453A;
+            --system-gray: #8E8E93;
+            --system-background: rgba(242, 242, 247, 0.8);
+            --system-card: rgba(255, 255, 255, 0.9);
+            --system-border: rgba(216, 216, 216, 0.5);
+            --text-primary: #1C1C1E;
+            --text-secondary: #636366;
+            --highlight: rgba(10, 132, 255, 0.15);
         }
-        
+
         @media (prefers-color-scheme: dark) {
             :root {
-                --primary: #0A84FF;
-                --primary-light: rgba(10, 132, 255, 0.2);
-                --secondary: #30D158;
-                --tertiary: #FF9F0A;
-                --danger: #FF453A;
-                --background: #1C1C1E;
-                --card: #2C2C2E;
-                --text: #FFFFFF;
-                --secondary-text: #8E8E93;
-                --border: #38383A;
-                --highlight-plaintext: #FFD700;
-                --highlight-trigram: rgba(48, 209, 88, 0.3);
-                --highlight-quadgram: rgba(10, 132, 255, 0.3);
+                --system-background: rgba(28, 28, 30, 0.8);
+                --system-card: rgba(44, 44, 46, 0.9);
+                --system-border: rgba(56, 56, 58, 0.5);
+                --text-primary: #FFFFFF;
+                --text-secondary: #8E8E93;
+                --highlight: rgba(10, 132, 255, 0.25);
             }
         }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--background);
-            color: var(--text);
+
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            max-width: 100vw;
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
         }
-        
-        .container {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-            padding: 16px;
+
+        body {
+            background: var(--system-background);
+            color: var(--text-primary);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .window {
             max-width: 1200px;
             margin: 0 auto;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: grid;
+            grid-template-columns: 1fr;
+            border: 1px solid var(--system-border);
         }
-        
-        @media (min-width: 768px) {
-            .container {
-                grid-template-columns: 1fr 1fr;
+
+        @media (min-width: 992px) {
+            .window {
+                grid-template-columns: 300px 1fr;
             }
         }
-        
-        .card {
-            background-color: var(--card);
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+
+        .sidebar {
+            background: var(--system-card);
+            padding: 1.5rem;
+            border-right: 1px solid var(--system-border);
         }
-        
-        .card-title {
-            font-size: 20px;
+
+        .content {
+            background: var(--system-card);
+            display: flex;
+            flex-direction: column;
+            height: 80vh;
+        }
+
+        .title-bar {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--system-border);
+        }
+
+        h1 {
+            font-size: 1.5rem;
             font-weight: 600;
-            margin-bottom: 16px;
-            color: var(--primary);
         }
-        
+
         .form-group {
-            margin-bottom: 16px;
+            margin-bottom: 1.5rem;
         }
-        
+
         label {
             display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: var(--secondary-text);
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
             font-weight: 500;
         }
-        
+
         input, textarea, select {
             width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--system-border);
             border-radius: 8px;
-            background-color: var(--card);
-            color: var(--text);
-            font-size: 16px;
-            box-sizing: border-box;
+            font-size: 0.9375rem;
+            color: var(--text-primary);
         }
-        
+
         textarea {
             min-height: 120px;
             resize: vertical;
-            font-family: monospace;
+            font-family: 'SF Mono', monospace;
         }
-        
+
         .button-group {
             display: flex;
-            gap: 8px;
-            margin-top: 16px;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
         }
-        
+
         button {
             flex: 1;
-            padding: 12px;
+            padding: 0.75rem;
             border-radius: 8px;
             border: none;
-            font-size: 16px;
+            font-size: 0.9375rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s;
         }
-        
-        .primary-button {
-            background-color: var(--primary);
+
+        .btn-primary {
+            background: var(--system-blue);
             color: white;
         }
-        
-        .secondary-button {
-            background-color: var(--border);
-            color: var(--text);
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--system-border);
+            color: var(--text-primary);
         }
-        
-        .danger-button {
-            background-color: var(--danger);
+
+        .btn-danger {
+            background: var(--system-red);
             color: white;
         }
-        
+
         button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
-        
+
         .progress-container {
-            margin-top: 16px;
+            margin-top: 1.5rem;
         }
-        
+
         .progress-bar {
             height: 6px;
-            background-color: var(--border);
+            background: rgba(0, 0, 0, 0.05);
             border-radius: 3px;
             overflow: hidden;
         }
-        
+
         .progress-fill {
             height: 100%;
-            background-color: var(--primary);
+            background: var(--system-blue);
             width: 0%;
             transition: width 0.3s ease;
         }
-        
+
         .status-text {
-            font-size: 14px;
-            color: var(--secondary-text);
-            margin-top: 8px;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
             text-align: center;
         }
-        
+
         .results-container {
-            max-height: 60vh;
+            flex: 1;
             overflow-y: auto;
+            padding: 1.5rem;
         }
-        
+
         .result-item {
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
             border-radius: 8px;
-            background-color: var(--card);
+            background: transparent;
+            transition: all 0.2s;
+            border: 1px solid transparent;
         }
-        
+
+        .result-item:hover {
+            background: var(--highlight);
+        }
+
         .result-item.best {
-            border-left: 4px solid var(--primary);
-            background-color: var(--primary-light);
+            border-color: var(--system-blue);
+            background: var(--highlight);
         }
-        
+
         .result-key {
             font-weight: 600;
-            margin-bottom: 4px;
-            color: var(--primary);
+            margin-bottom: 0.25rem;
+            color: var(--system-blue);
+            font-size: 0.9375rem;
         }
-        
+
         .result-text {
-            font-family: monospace;
-            margin-bottom: 4px;
+            font-family: 'SF Mono', monospace;
+            margin-bottom: 0.5rem;
             white-space: pre-wrap;
             word-break: break-word;
             line-height: 1.5;
+            font-size: 0.875rem;
         }
-        
+
         .result-score {
-            font-size: 14px;
-            color: var(--secondary-text);
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
             display: flex;
             justify-content: space-between;
         }
-        
-        .settings-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        
-        .workers-control {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .workers-control input {
-            flex: 1;
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            background-color: var(--primary);
-            color: white;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        .badge-secondary {
-            background-color: var(--secondary);
-        }
-        
-        .badge-tertiary {
-            background-color: var(--tertiary);
-        }
-        
-        .highlight-plaintext {
-            background-color: var(--highlight-plaintext);
-            font-weight: bold;
-            padding: 0 2px;
-            border-radius: 2px;
-        }
-        
-        .highlight-trigram {
-            background-color: var(--highlight-trigram);
-            border-radius: 2px;
-        }
-        
-        .highlight-quadgram {
-            background-color: var(--highlight-quadgram);
-            border-radius: 2px;
-        }
-        
-        .cube-visualization {
-            margin-top: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 8px;
-            background-color: var(--background);
-            overflow-x: auto;
-        }
-        
-        .cube-layer {
-            margin-bottom: 12px;
-        }
-        
-        .cube-layer-title {
-            font-weight: bold;
-            margin-bottom: 4px;
-            color: var(--secondary-text);
-        }
-        
-        .cube-row {
-            display: flex;
-            margin-bottom: 2px;
-        }
-        
-        .cube-cell {
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--border);
-            margin-right: 2px;
-            font-family: monospace;
-            font-size: 14px;
-        }
-        
+
         .stats-container {
-            display: flex;
-            gap: 12px;
-            margin-top: 8px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-top: 1rem;
         }
-        
+
         .stat-item {
-            flex: 1;
             text-align: center;
-            padding: 8px;
-            background-color: var(--background);
+            padding: 0.75rem;
+            background: rgba(0, 0, 0, 0.03);
             border-radius: 8px;
         }
-        
+
         .stat-value {
-            font-weight: bold;
-            font-size: 16px;
+            font-weight: 600;
+            font-size: 1rem;
         }
-        
+
         .stat-label {
-            font-size: 12px;
-            color: var(--secondary-text);
+            font-size: 0.6875rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
         }
-        
-        .keyboard-controls {
-            display: flex;
-            gap: 8px;
-            margin-top: 12px;
-        }
-        
-        .keyboard-button {
-            padding: 6px 12px;
-            border-radius: 6px;
-            background-color: var(--background);
-            border: 1px solid var(--border);
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
+
         .tabs {
             display: flex;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 12px;
+            border-bottom: 1px solid var(--system-border);
         }
-        
+
         .tab {
-            padding: 8px 16px;
+            padding: 0.75rem 1.5rem;
             cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
             border-bottom: 2px solid transparent;
         }
-        
+
         .tab.active {
-            border-bottom: 2px solid var(--primary);
-            font-weight: 500;
+            border-bottom-color: var(--system-blue);
+            color: var(--system-blue);
         }
-        
+
         .tab-content {
             display: none;
+            flex: 1;
+            overflow-y: auto;
         }
-        
+
         .tab-content.active {
             display: block;
         }
-        
-        .top-results-header {
+
+        .cube-visualization {
+            padding: 1.5rem;
+        }
+
+        .cube-layer {
+            margin-bottom: 1.5rem;
+        }
+
+        .cube-layer-title {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .cube-row {
             display: flex;
-            justify-content: space-between;
+            margin-bottom: 0.25rem;
+        }
+
+        .cube-cell {
+            width: 32px;
+            height: 32px;
+            display: flex;
             align-items: center;
-            margin-bottom: 8px;
+            justify-content: center;
+            border: 1px solid var(--system-border);
+            margin-right: 0.25rem;
+            font-family: 'SF Mono', monospace;
+            font-size: 0.875rem;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.03);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <div class="card-title">Configuration</div>
-            
+    <div class="window">
+        <div class="sidebar">
             <div class="form-group">
                 <label for="ciphertext">Ciphertext</label>
-                <textarea id="ciphertext" spellcheck="false">OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR</textarea>
+                <textarea id="ciphertext">OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR</textarea>
             </div>
             
             <div class="form-group">
-                <label for="alphabet">Alphabet (27 chars for 3×3×3 cube)</label>
-                <input id="alphabet" value="ABCDEFGHIKLMNOPQRSTUVWXYZ?*" placeholder="Enter custom alphabet" spellcheck="false">
-            </div>
-            
-            <div class="settings-grid">
-                <div class="form-group">
-                    <label for="searchMode">Search Mode</label>
-                    <select id="searchMode">
-                        <option value="full">Full Key Search</option>
-                        <option value="partial">Partial Key Search</option>
-                        <option value="known">Known Plaintext</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="period">Trifid Period</label>
-                    <input id="period" type="number" value="5" min="1" max="20">
-                </div>
+                <label for="alphabet">Alphabet (27 chars)</label>
+                <input id="alphabet" value="ABCDEFGHIKLMNOPQRSTUVWXYZ?*">
             </div>
             
             <div class="form-group">
-                <label for="knownPlaintext">Known Plaintext (for verification)</label>
-                <input id="knownPlaintext" placeholder="e.g., BERLIN" spellcheck="false">
+                <label for="keyLength">Key Length</label>
+                <input id="keyLength" type="number" value="6" min="1" max="10">
             </div>
             
             <div class="form-group">
-                <label for="keyLength">Key Length (for partial search)</label>
-                <input id="keyLength" type="number" value="6" min="1" max="20">
+                <label for="period">Period</label>
+                <input id="period" type="number" value="5" min="1" max="10">
             </div>
             
             <div class="form-group">
-                <label>Worker Configuration</label>
-                <div class="workers-control">
-                    <input id="workerCount" type="number" value="4" min="1" max="16" placeholder="Worker count">
-                    <span class="badge" id="workerStatus">Idle</span>
-                </div>
+                <label for="knownPlaintext">Known Plaintext</label>
+                <input id="knownPlaintext" placeholder="e.g., BERLIN">
+            </div>
+            
+            <div class="form-group">
+                <label for="workerCount">Workers</label>
+                <input id="workerCount" type="number" value="4" min="1" max="16">
             </div>
             
             <div class="button-group">
-                <button id="startButton" class="primary-button">Start Cracking</button>
-                <button id="stopButton" class="danger-button" disabled>Stop</button>
-                <button id="pauseButton" class="secondary-button" disabled>Pause</button>
+                <button id="startButton" class="btn-primary">Start</button>
+                <button id="stopButton" class="btn-danger" disabled>Stop</button>
+                <button id="pauseButton" class="btn-secondary" disabled>Pause</button>
             </div>
             
             <div class="progress-container">
@@ -449,37 +378,41 @@
             </div>
         </div>
         
-        <div class="card">
+        <div class="content">
+            <div class="title-bar">
+                <h1>Decryption Results</h1>
+            </div>
+            
             <div class="tabs">
-                <div class="tab active" data-tab="results">Results <span id="resultsCount" class="badge">0</span></div>
-                <div class="tab" data-tab="cube">Cube Visualization</div>
-                <div class="tab" data-tab="stats">Statistics</div>
+                <div class="tab active" data-tab="results">Results</div>
+                <div class="tab" data-tab="cube">Cube</div>
+                <div class="tab" data-tab="stats">Stats</div>
             </div>
             
             <div id="results" class="tab-content active">
-                <div class="top-results-header">
-                    <h3>Top 20 Results</h3>
-                    <div class="badge" id="bestScore">Best: 0.00</div>
+                <div class="results-container" id="resultsContainer">
+                    <div class="result-item">
+                        <div class="result-key">No results yet</div>
+                        <div class="result-text">Start cracking to see results</div>
+                    </div>
                 </div>
-                <div id="resultsContainer" class="results-container"></div>
             </div>
             
             <div id="cube" class="tab-content">
                 <div class="cube-visualization" id="cubeVisualization">
-                    <p>No cube generated yet. Start cracking to see the cube visualization.</p>
+                    <p>No cube generated yet</p>
                 </div>
             </div>
             
             <div id="stats" class="tab-content">
-                <div id="statsContainer" class="results-container">
-                    <p>Statistics will appear here after analysis.</p>
+                <div class="results-container" id="statsContainer">
+                    <p>Statistics will appear here</p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Main Application Class
         class TrifidCracker {
             constructor() {
                 this.workers = [];
@@ -494,11 +427,8 @@
                 this.currentCube = null;
                 this.currentKey = null;
                 
-                // Initialize DOM elements
                 this.initElements();
-                // Set up event listeners
                 this.initEventListeners();
-                // Set optimal worker count
                 this.updateOptimalWorkerCount();
             }
             
@@ -506,12 +436,10 @@
                 this.elements = {
                     ciphertext: document.getElementById('ciphertext'),
                     alphabet: document.getElementById('alphabet'),
-                    searchMode: document.getElementById('searchMode'),
-                    knownPlaintext: document.getElementById('knownPlaintext'),
                     keyLength: document.getElementById('keyLength'),
                     period: document.getElementById('period'),
+                    knownPlaintext: document.getElementById('knownPlaintext'),
                     workerCount: document.getElementById('workerCount'),
-                    workerStatus: document.getElementById('workerStatus'),
                     startButton: document.getElementById('startButton'),
                     stopButton: document.getElementById('stopButton'),
                     pauseButton: document.getElementById('pauseButton'),
@@ -520,14 +448,12 @@
                     resultsContainer: document.getElementById('resultsContainer'),
                     cubeVisualization: document.getElementById('cubeVisualization'),
                     statsContainer: document.getElementById('statsContainer'),
-                    resultsCount: document.getElementById('resultsCount'),
                     keysTested: document.getElementById('keysTested'),
                     keysPerSec: document.getElementById('keysPerSec'),
                     totalPossible: document.getElementById('totalPossible'),
                     timeRemaining: document.getElementById('timeRemaining'),
                     tabs: document.querySelectorAll('.tab'),
-                    tabContents: document.querySelectorAll('.tab-content'),
-                    bestScore: document.getElementById('bestScore')
+                    tabContents: document.querySelectorAll('.tab-content')
                 };
             }
             
@@ -536,38 +462,23 @@
                 this.elements.stopButton.addEventListener('click', () => this.stop());
                 this.elements.pauseButton.addEventListener('click', () => this.togglePause());
                 
-                // Tab switching
                 this.elements.tabs.forEach(tab => {
                     tab.addEventListener('click', () => {
                         const tabName = tab.getAttribute('data-tab');
                         this.switchTab(tabName);
                     });
                 });
-                
-                // Update total possible keys when parameters change
-                this.elements.alphabet.addEventListener('input', () => this.updateTotalPossibleKeys());
-                this.elements.keyLength.addEventListener('input', () => this.updateTotalPossibleKeys());
-                this.elements.searchMode.addEventListener('change', () => this.updateTotalPossibleKeys());
             }
             
             switchTab(tabName) {
                 this.elements.tabs.forEach(tab => {
-                    if (tab.getAttribute('data-tab') === tabName) {
-                        tab.classList.add('active');
-                    } else {
-                        tab.classList.remove('active');
-                    }
+                    tab.classList.toggle('active', tab.getAttribute('data-tab') === tabName);
                 });
                 
                 this.elements.tabContents.forEach(content => {
-                    if (content.id === tabName) {
-                        content.classList.add('active');
-                    } else {
-                        content.classList.remove('active');
-                    }
+                    content.classList.toggle('active', content.id === tabName);
                 });
                 
-                // Refresh cube visualization if needed
                 if (tabName === 'cube' && this.currentCube) {
                     this.renderCubeVisualization(this.currentCube);
                 }
@@ -576,288 +487,45 @@
             updateOptimalWorkerCount() {
                 const cores = navigator.hardwareConcurrency || 4;
                 this.elements.workerCount.value = Math.min(cores, 16);
-                this.updateWorkerStatus();
-            }
-            
-            updateWorkerStatus() {
-                this.elements.workerStatus.textContent = 
-                    this.isRunning ? 
-                        `${this.activeWorkers} active${this.isPaused ? ' (paused)' : ''}` : 
-                        'Idle';
-            }
-            
-            updateTotalPossibleKeys() {
-                const alphabet = this.elements.alphabet.value;
-                const keyLength = parseInt(this.elements.keyLength.value);
-                const searchMode = this.elements.searchMode.value;
-                
-                if (!alphabet || alphabet.length === 0) {
-                    this.elements.totalPossible.textContent = '∞';
-                    return;
-                }
-                
-                let total;
-                
-                if (searchMode === 'full') {
-                    total = Infinity;
-                } else if (searchMode === 'partial') {
-                    total = Math.pow(alphabet.length, keyLength);
-                } else {
-                    total = Infinity;
-                }
-                
-                if (total === Infinity) {
-                    this.elements.totalPossible.textContent = '∞';
-                } else {
-                    this.elements.totalPossible.textContent = total.toLocaleString();
-                }
             }
             
             async start() {
                 if (this.isRunning) return;
                 
-                // Get parameters from form
                 const ciphertext = this.elements.ciphertext.value.toUpperCase().replace(/[^A-Z?*]/g, '');
                 const alphabet = this.elements.alphabet.value.toUpperCase().replace(/[^A-Z?*]/g, '');
-                const searchMode = this.elements.searchMode.value;
-                const knownPlaintext = this.elements.knownPlaintext.value.toUpperCase();
                 const keyLength = parseInt(this.elements.keyLength.value);
                 const period = parseInt(this.elements.period.value);
+                const knownPlaintext = this.elements.knownPlaintext.value.toUpperCase();
                 const workerCount = parseInt(this.elements.workerCount.value);
                 
-                // Validate inputs
-                if (!ciphertext) {
-                    this.showError("Please enter ciphertext!");
+                if (!ciphertext || alphabet.length !== 27) {
+                    this.showError("Invalid parameters");
                     return;
                 }
                 
-                const requiredChars = 27;
-                if (alphabet.length < requiredChars) {
-                    this.showError(`Alphabet needs at least ${requiredChars} characters for 3×3×3 cube!`);
-                    return;
-                }
-                
-                // Reset state
                 this.resetState();
                 this.isRunning = true;
                 this.startTime = performance.now();
                 
-                // Create workers
                 this.createWorkers(workerCount, {
-                    ciphertext: ciphertext,
-                    alphabet: alphabet,
-                    keyLength: keyLength,
-                    period: period,
-                    knownPlaintext: knownPlaintext,
-                    searchMode: searchMode
+                    ciphertext,
+                    alphabet,
+                    keyLength,
+                    period,
+                    knownPlaintext
                 });
                 
-                // Update UI
                 this.updateUI();
-                
-                // Start progress updates
                 this.updateIntervalId = setInterval(() => this.updateStats(), 1000);
-                
-                this.elements.status.textContent = `Running with ${workerCount} workers...`;
             }
             
             createWorkers(count, params) {
-                // Create worker code as a blob
-                const workerCode = `
-                    const ngramStats = {
-                        letters: { 'E': 12.7, 'T': 9.1, 'A': 8.2, 'O': 7.5, 'I': 6.9, 'N': 6.7, 'S': 6.3, 'H': 6.0, 'R': 5.9, 'D': 4.2, 'L': 4.0, 'C': 2.7, 'U': 2.7, 'M': 2.4, 'W': 2.3, 'F': 2.2, 'G': 2.0, 'Y': 1.9, 'P': 1.9, 'B': 1.4, 'V': 0.9, 'K': 0.7, 'J': 0.1, 'X': 0.1, 'Q': 0.1, 'Z': 0.0, '?': 0.1, '*': 0.1 },
-                        bigrams: { 'TH': 15.2, 'HE': 12.5, 'IN': 9.4, 'ER': 9.4, 'AN': 8.2, 'RE': 6.8, 'ND': 6.3, 'AT': 5.9, 'ON': 5.7, 'NT': 5.6, 'HA': 5.6, 'ES': 5.6, 'ST': 5.5, 'EN': 5.5, 'ED': 5.3, 'TO': 5.2, 'IT': 5.0, 'OU': 5.0, 'EA': 4.7, 'HI': 4.6, 'IS': 4.6, 'OR': 4.3, 'TI': 3.4, 'AS': 3.3, 'TE': 2.7, 'ET': 1.9, 'NG': 1.8, 'OF': 1.6, 'AL': 0.9, 'DE': 0.9, 'SE': 0.8, 'LE': 0.8, 'SA': 0.6, 'SI': 0.5, 'AR': 0.4 },
-                        trigrams: { 'THE': 18.1, 'AND': 7.3, 'ING': 7.2, 'ENT': 4.2, 'ION': 4.2, 'HER': 3.6, 'FOR': 3.4, 'THA': 3.3, 'NTH': 3.3, 'INT': 3.2, 'ERE': 3.1, 'TIO': 3.1, 'TER': 3.0, 'EST': 2.8, 'ERS': 2.8, 'ATI': 2.6, 'HAT': 2.6, 'ATE': 2.5, 'ALL': 2.5, 'ETH': 2.4, 'HIS': 2.4, 'VER': 2.4, 'HIM': 2.3, 'OFT': 2.2, 'ITH': 2.1, 'FTH': 2.1, 'STH': 2.1, 'OTH': 2.1, 'DTH': 2.1, 'ONT': 2.0, 'EDT': 2.0, 'ARE': 2.0, 'REA': 1.9, 'EAR': 1.9, 'RES': 1.9, 'CON': 1.9, 'EVE': 1.9, 'PER': 1.9, 'ECT': 1.9 },
-                        quadgrams: { 'TION': 15.0, 'NTHE': 14.0, 'THER': 13.0, 'THAT': 12.0, 'OFTH': 11.0, 'FTHE': 11.0, 'THES': 10.0, 'WITH': 10.0, 'INTH': 9.0, 'ATIO': 9.0, 'OTHE': 8.0, 'ETHE': 7.0, 'TOTH': 7.0, 'DTHE': 7.0, 'INGT': 7.0, 'SAND': 6.0, 'STHE': 6.0, 'HERE': 6.0, 'THEC': 6.0, 'MENT': 6.0, 'THEM': 5.0, 'THEP': 5.0, 'RTHE': 5.0, 'TAND': 5.0, 'THEY': 5.0, 'NGTH': 5.0, 'IONS': 5.0, 'EDTH': 4.0, 'ANDT': 4.0, 'OFTHE': 4.0, 'TIVE': 4.0, 'FROM': 4.0, 'THIS': 4.0, 'TING': 4.0, 'THEI': 4.0, 'WHIC': 3.0, 'HICH': 3.0, 'INCE': 3.0, 'ECTI': 3.0, 'HAVE': 3.0, 'CTIO': 3.0, 'SSIO': 3.0, 'COMM': 3.0, 'LLY': 2.0 }
-                    };
-                    
-                    const weights = { letters: 0.5, bigrams: 1.0, trigrams: 1.5, quadgrams: 2.0 };
-                    
-                    function generateKey(index, alphabet, keyLength) {
-                        let key = '';
-                        let remaining = index;
-                        
-                        for (let i = 0; i < keyLength; i++) {
-                            const charIndex = remaining % alphabet.length;
-                            key = alphabet[charIndex] + key;
-                            remaining = Math.floor(remaining / alphabet.length);
-                        }
-                        
-                        return key;
-                    }
-                    
-                    function generateCube(key, alphabet) {
-                        const keyChars = [...new Set(key.toUpperCase().split('').filter(c => alphabet.includes(c)))];
-                        const remainingChars = alphabet.split('').filter(c => !keyChars.includes(c));
-                        const keyedAlphabet = [...keyChars, ...remainingChars].join('');
-                    
-                        const cube = [];
-                        for (let i = 0; i < 27; i++) {
-                            const layer = Math.floor(i / 9);
-                            const row = Math.floor((i % 9) / 3);
-                            const col = i % 3;
-                            
-                            if (!cube[layer]) cube[layer] = [];
-                            if (!cube[layer][row]) cube[layer][row] = [];
-                            
-                            cube[layer][row][col] = keyedAlphabet[i % keyedAlphabet.length];
-                        }
-                        return cube;
-                    }
-                    
-                    function decrypt(cube, ciphertext, period) {
-                        const coordMap = new Map();
-                        for (let l = 0; l < 3; l++) {
-                            for (let r = 0; r < 3; r++) {
-                                for (let c = 0; c < 3; c++) {
-                                    coordMap.set(cube[l][r][c], [l, r, c]);
-                                }
-                            }
-                        }
-                    
-                        const groups = [];
-                        for (let i = 0; i < ciphertext.length; i += period) {
-                            groups.push(ciphertext.slice(i, i + period));
-                        }
-                    
-                        const allCoords = groups.flatMap(group => 
-                            [...group].map(c => coordMap.get(c) || [0, 0, 0]
-                        ).flat();
-                    
-                        let plaintext = '';
-                        for (let i = 0; i < allCoords.length; i += 3) {
-                            if (i + 2 >= allCoords.length) break;
-                            plaintext += cube[allCoords[i]][allCoords[i+1]][allCoords[i+2]];
-                        }
-                    
-                        return plaintext;
-                    }
-                    
-                    function scoreText(text, ngramStats, weights) {
-                        const cleanText = text.toUpperCase().replace(/[^A-Z?*]/g, '');
-                        const counts = { letters: {}, bigrams: {}, trigrams: {}, quadgrams: {} };
-                        
-                        for (let i = 0; i < cleanText.length; i++) {
-                            counts.letters[cleanText[i]] = (counts.letters[cleanText[i]] || 0) + 1;
-                            
-                            if (i < cleanText.length - 1) {
-                                const bigram = cleanText.substr(i, 2);
-                                if (ngramStats.bigrams[bigram]) {
-                                    counts.bigrams[bigram] = (counts.bigrams[bigram] || 0) + 1;
-                                }
-                            }
-                            
-                            if (i < cleanText.length - 2) {
-                                const trigram = cleanText.substr(i, 3);
-                                if (ngramStats.trigrams[trigram]) {
-                                    counts.trigrams[trigram] = (counts.trigrams[trigram] || 0) + 1;
-                                }
-                            }
-                            
-                            if (i < cleanText.length - 3) {
-                                const quadgram = cleanText.substr(i, 4);
-                                if (ngramStats.quadgrams[quadgram]) {
-                                    counts.quadgrams[quadgram] = (counts.quadgrams[quadgram] || 0) + 1;
-                                }
-                            }
-                        }
-                        
-                        const scores = {};
-                        let total = 0;
-                        const weightSum = Object.values(weights).reduce((a, b) => a + b, 0);
-                        
-                        for (const type of ['letters', 'bigrams', 'trigrams', 'quadgrams']) {
-                            scores[type] = 0;
-                            
-                            for (const gram in counts[type]) {
-                                if (ngramStats[type][gram]) {
-                                    const expected = (ngramStats[type][gram] / 100) * (cleanText.length / Math.pow(10, type.length - 1));
-                                    const observed = counts[type][gram];
-                                    scores[type] += Math.log10((observed + 1) / (expected + 1));
-                                }
-                            }
-                            
-                            total += scores[type] * (weights[type] / weightSum);
-                        }
-                        
-                        return { 
-                            total: total, 
-                            counts: {
-                                trigrams: Object.keys(counts.trigrams).length,
-                                quadgrams: Object.keys(counts.quadgrams).length
-                            }
-                        };
-                    }
-                    
-                    self.onmessage = async function(e) {
-                        const { type, data } = e.data;
-                        
-                        if (type === 'start') {
-                            const { ciphertext, alphabet, keyLength, period, knownPlaintext, workerId, keysToTest, startIndex } = data;
-                            let keysProcessed = 0;
-                            let batchResults = [];
-                            
-                            for (let i = 0; i < keysToTest; i++) {
-                                if (self.paused) {
-                                    await new Promise(resolve => setTimeout(resolve, 100));
-                                    continue;
-                                }
-                                
-                                const key = generateKey(startIndex + i, alphabet, keyLength);
-                                const cube = generateCube(key, alphabet);
-                                const plaintext = decrypt(cube, ciphertext, period);
-                                const scoreData = scoreText(plaintext, ngramStats, weights);
-                                
-                                if (!knownPlaintext || plaintext.includes(knownPlaintext)) {
-                                    batchResults.push({
-                                        key: key,
-                                        text: plaintext,
-                                        score: scoreData.total,
-                                        cube: cube,
-                                        counts: scoreData.counts
-                                    });
-                                }
-                                
-                                keysProcessed++;
-                                
-                                // Send batch every 100 keys or at the end
-                                if (batchResults.length >= 100 || i === keysToTest - 1) {
-                                    self.postMessage({
-                                        type: 'results',
-                                        results: batchResults,
-                                        keysTested: keysProcessed,
-                                        workerId: workerId
-                                    });
-                                    batchResults = [];
-                                }
-                                
-                                // Yield to event loop periodically
-                                if (i % 10 === 0) {
-                                    await new Promise(resolve => setTimeout(resolve, 0));
-                                }
-                            }
-                            
-                            self.postMessage({ type: 'complete', workerId: workerId });
-                        } else if (type === 'pause') {
-                            self.paused = true;
-                        } else if (type === 'resume') {
-                            self.paused = false;
-                        }
-                    };
-                `;
-                
-                const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
-                const workerUrl = URL.createObjectURL(workerBlob);
-                
-                // Calculate keys per worker
-                const keysPerWorker = searchMode === 'partial' ? 
-                    Math.ceil(Math.pow(alphabet.length, keyLength) / count :
-                    10000;
-                
+                const keysPerWorker = 10000;
                 this.activeWorkers = count;
                 
                 for (let i = 0; i < count; i++) {
-                    const worker = new Worker(workerUrl);
+                    const worker = new Worker('trifid-worker.js');
                     
                     worker.onmessage = (e) => {
                         this.handleWorkerMessage(e.data);
@@ -870,7 +538,6 @@
                     
                     this.workers.push(worker);
                     
-                    // Start worker with its portion of work
                     worker.postMessage({
                         type: 'start',
                         ciphertext: params.ciphertext,
@@ -893,20 +560,16 @@
                         data.results.forEach(result => {
                             this.results.push(result);
                             
-                            // Update best score
                             if (result.score > this.bestScore) {
                                 this.bestScore = result.score;
-                                this.elements.bestScore.textContent = `Best: ${result.score.toFixed(2)}`;
                             }
                             
-                            // Store cube for visualization
                             if (result.cube) {
                                 this.currentCube = result.cube;
                                 this.currentKey = result.key;
                             }
                         });
                         
-                        // Keep only top results
                         this.results.sort((a, b) => b.score - a.score);
                         if (this.results.length > 100) {
                             this.results.length = 100;
@@ -923,129 +586,74 @@
             
             workerComplete() {
                 this.activeWorkers--;
-                this.updateWorkerStatus();
                 
                 if (this.activeWorkers === 0) {
                     this.stop();
                     const elapsed = ((performance.now() - this.startTime) / 1000).toFixed(2);
-                    this.elements.status.textContent = `Search completed in ${elapsed}s (${this.keysTested.toLocaleString()} keys tested)`;
+                    this.elements.status.textContent = `Completed in ${elapsed}s (${this.keysTested.toLocaleString()} keys)`;
                 }
             }
             
             workerError(worker) {
                 worker.terminate();
                 this.activeWorkers--;
-                this.updateWorkerStatus();
                 
                 if (this.activeWorkers === 0) {
                     this.stop();
-                    this.showError("All workers stopped due to errors");
+                    this.showError("All workers stopped");
                 }
             }
             
             updateResultsDisplay() {
-                this.elements.resultsCount.textContent = this.results.length.toLocaleString();
                 this.elements.resultsContainer.innerHTML = '';
                 
-                // Show top 20 results
-                const topResults = this.results.slice(0, 20);
-                topResults.forEach((result, index) => {
-                    this.addResult(result, index === 0);
+                this.results.slice(0, 20).forEach((result, index) => {
+                    const isBest = index === 0 && result.score === this.bestScore;
+                    this.addResult(result, isBest);
                 });
             }
             
-            addResult(data, isBest) {
-                const resultItem = document.createElement('div');
-                resultItem.className = `result-item ${isBest ? 'best' : ''}`;
+            addResult(result, isBest) {
+                const item = document.createElement('div');
+                item.className = `result-item ${isBest ? 'best' : ''}`;
                 
-                // Highlight known plaintext if provided
-                let displayText = data.text;
                 const knownPlaintext = this.elements.knownPlaintext.value.toUpperCase();
+                let displayText = result.text;
                 
-                if (knownPlaintext && knownPlaintext.length > 0) {
-                    const index = displayText.toUpperCase().indexOf(knownPlaintext);
-                    if (index >= 0) {
-                        const before = displayText.substring(0, index);
-                        const match = displayText.substring(index, index + knownPlaintext.length);
-                        const after = displayText.substring(index + knownPlaintext.length);
-                        displayText = `${before}<span class="highlight-plaintext">${match}</span>${after}`;
-                    }
+                if (knownPlaintext && displayText.toUpperCase().includes(knownPlaintext)) {
+                    const start = displayText.toUpperCase().indexOf(knownPlaintext);
+                    const end = start + knownPlaintext.length;
+                    displayText = 
+                        displayText.substring(0, start) +
+                        `<span style="background: var(--system-green); color: white; padding: 0 2px; border-radius: 2px;">${displayText.substring(start, end)}</span>` +
+                        displayText.substring(end);
                 }
                 
-                // Add cube visualization button
-                const cubeButton = document.createElement('button');
-                cubeButton.className = 'keyboard-button';
-                cubeButton.textContent = 'Show Cube';
-                cubeButton.onclick = () => {
-                    if (data.cube) {
-                        this.currentCube = data.cube;
-                        this.currentKey = data.key;
-                        this.renderCubeVisualization(data.cube);
-                        this.switchTab('cube');
-                    }
-                };
-                
-                resultItem.innerHTML = `
-                    <div class="result-key">Key: ${data.key}</div>
-                    <div class="result-text">${this.highlightPatterns(displayText)}</div>
+                item.innerHTML = `
+                    <div class="result-key">${result.key}</div>
+                    <div class="result-text">${displayText}</div>
                     <div class="result-score">
-                        <span>Score: ${data.score.toFixed(4)}</span>
-                        <span>Trigrams: ${data.counts.trigrams || 0}</span>
-                        <span>Quadgrams: ${data.counts.quadgrams || 0}</span>
+                        <span>Score: ${result.score.toFixed(2)}</span>
+                        <span>Trigrams: ${result.counts?.trigrams || 0}</span>
+                        <span>Quadgrams: ${result.counts?.quadgrams || 0}</span>
                     </div>
                 `;
                 
-                resultItem.querySelector('.result-score').appendChild(cubeButton);
-                this.elements.resultsContainer.appendChild(resultItem);
-            }
-            
-            highlightPatterns(text) {
-                // Common English trigrams
-                const commonTrigrams = [
-                    'THE', 'AND', 'ING', 'ENT', 'ION', 'HER', 'FOR', 'THA', 'NTH', 'INT',
-                    'ERE', 'TIO', 'TER', 'EST', 'ERS', 'ATI', 'HAT', 'ATE', 'ALL', 'ETH'
-                ];
-                
-                // Common English quadgrams
-                const commonQuadgrams = [
-                    'TION', 'NTHE', 'THER', 'THAT', 'OFTHE', 'INGT', 'THEM', 'THEI', 
-                    'DTHE', 'ATIO', 'ETHE', 'THIS', 'TING', 'WITH', 'STHE', 'HERE'
-                ];
-                
-                let highlighted = text;
-                
-                // Highlight quadgrams first (longer matches take precedence)
-                for (const quadgram of commonQuadgrams) {
-                    const regex = new RegExp(quadgram, 'gi');
-                    highlighted = highlighted.replace(regex, 
-                        match => `<span class="highlight-quadgram">${match}</span>`);
-                }
-                
-                // Then highlight trigrams (but don't overlap with quadgrams)
-                for (const trigram of commonTrigrams) {
-                    const regex = new RegExp(`(?<!")${trigram}(?!")`, 'gi');
-                    highlighted = highlighted.replace(regex, 
-                        match => `<span class="highlight-trigram">${match}</span>`);
-                }
-                
-                return highlighted;
+                this.elements.resultsContainer.appendChild(item);
             }
             
             renderCubeVisualization(cube) {
-                if (!cube || !cube.length) return;
+                let html = '';
                 
-                let html = `<h3>Cube for key: ${this.currentKey || 'None'}</h3>`;
-                
-                for (let layer = 0; layer < cube.length; layer++) {
+                for (let l = 0; l < 3; l++) {
                     html += `<div class="cube-layer">
-                        <div class="cube-layer-title">Layer ${layer + 1}</div>`;
+                        <div class="cube-layer-title">Layer ${l + 1}</div>`;
                     
-                    for (let row = 0; row < cube[layer].length; row++) {
+                    for (let r = 0; r < 3; r++) {
                         html += '<div class="cube-row">';
                         
-                        for (let col = 0; col < cube[layer][row].length; col++) {
-                            const char = cube[layer][row][col];
-                            html += `<div class="cube-cell">${char}</div>`;
+                        for (let c = 0; c < 3; c++) {
+                            html += `<div class="cube-cell">${cube[l][r][c]}</div>`;
                         }
                         
                         html += '</div>';
@@ -1065,11 +673,11 @@
                 if (this.isPaused) {
                     this.elements.pauseButton.textContent = 'Resume';
                     this.elements.status.textContent = 'Paused';
-                    this.workers.forEach(worker => worker.postMessage({ type: 'pause' }));
+                    this.workers.forEach(w => w.postMessage({ type: 'pause' }));
                 } else {
                     this.elements.pauseButton.textContent = 'Pause';
-                    this.elements.status.textContent = 'Resuming...';
-                    this.workers.forEach(worker => worker.postMessage({ type: 'resume' }));
+                    this.elements.status.textContent = 'Running...';
+                    this.workers.forEach(w => w.postMessage({ type: 'resume' }));
                 }
             }
             
@@ -1079,20 +687,12 @@
                 this.isRunning = false;
                 this.isPaused = false;
                 
-                // Terminate all workers
-                this.workers.forEach(worker => worker.terminate());
+                this.workers.forEach(w => w.terminate());
                 this.workers = [];
                 this.activeWorkers = 0;
                 
-                // Clear update interval
-                if (this.updateIntervalId) {
-                    clearInterval(this.updateIntervalId);
-                    this.updateIntervalId = null;
-                }
-                
-                // Update UI
+                clearInterval(this.updateIntervalId);
                 this.updateUI();
-                this.generateStatistics();
             }
             
             resetState() {
@@ -1102,14 +702,11 @@
                 this.currentCube = null;
                 this.currentKey = null;
                 
-                this.elements.resultsContainer.innerHTML = '';
-                this.elements.resultsCount.textContent = '0';
-                this.elements.bestScore.textContent = 'Best: 0.00';
+                this.elements.resultsContainer.innerHTML = '<div class="result-item"><div class="result-key">No results yet</div><div class="result-text">Start cracking to see results</div></div>';
                 this.elements.keysTested.textContent = '0';
                 this.elements.keysPerSec.textContent = '0';
                 this.elements.timeRemaining.textContent = '--';
                 this.elements.progressBar.style.width = '0%';
-                this.elements.statsContainer.innerHTML = '<p>Statistics will appear here after analysis.</p>';
             }
             
             updateUI() {
@@ -1117,133 +714,38 @@
                 this.elements.stopButton.disabled = !this.isRunning;
                 this.elements.pauseButton.disabled = !this.isRunning;
                 this.elements.pauseButton.textContent = 'Pause';
-                this.updateWorkerStatus();
             }
             
             updateStats() {
                 if (!this.isRunning || this.isPaused) return;
                 
                 const elapsed = (performance.now() - this.startTime) / 1000;
-                const keysPerSec = elapsed > 0 ? (this.keysTested / elapsed).toFixed(0) : 0;
+                const keysPerSec = (this.keysTested / elapsed).toFixed(0);
                 
                 this.elements.keysTested.textContent = this.keysTested.toLocaleString();
-                this.elements.keysPerSec.textContent = keysPerSec.toLocaleString();
+                this.elements.keysPerSec.textContent = keysPerSec;
                 
-                // Calculate estimated time remaining if we know total possible keys
-                const totalPossible = this.calculateTotalPossibleKeys();
-                if (totalPossible !== Infinity && keysPerSec > 0) {
-                    const remainingKeys = totalPossible - this.keysTested;
-                    const remainingTime = remainingKeys / keysPerSec;
+                const totalPossible = Math.pow(this.elements.alphabet.value.length, this.elements.keyLength.value);
+                if (totalPossible < Infinity) {
+                    const remaining = Math.max(0, totalPossible - this.keysTested);
+                    const remainingTime = remaining / keysPerSec;
+                    this.elements.timeRemaining.textContent = this.formatTime(remainingTime);
                     
-                    if (remainingTime > 0) {
-                        this.elements.timeRemaining.textContent = this.formatTime(remainingTime);
-                    }
-                    
-                    // Update progress bar
                     const progress = Math.min(100, (this.keysTested / totalPossible) * 100);
                     this.elements.progressBar.style.width = `${progress}%`;
                 }
             }
             
-            calculateTotalPossibleKeys() {
-                const alphabet = this.elements.alphabet.value;
-                const keyLength = parseInt(this.elements.keyLength.value);
-                const searchMode = this.elements.searchMode.value;
-                
-                if (searchMode === 'partial' && alphabet && alphabet.length > 0) {
-                    return Math.pow(alphabet.length, keyLength);
-                }
-                return Infinity;
-            }
-            
             formatTime(seconds) {
-                const hours = Math.floor(seconds / 3600);
-                seconds %= 3600;
-                const minutes = Math.floor(seconds / 60);
-                seconds = Math.floor(seconds % 60);
-                
-                return [
-                    hours.toString().padStart(2, '0'),
-                    minutes.toString().padStart(2, '0'),
-                    seconds.toString().padStart(2, '0')
-                ].join(':');
-            }
-            
-            generateStatistics() {
-                if (this.results.length === 0) return;
-                
-                let html = '<h3>Analysis Results</h3>';
-                
-                // Count of results with known plaintext
-                const knownPlaintext = this.elements.knownPlaintext.value.toUpperCase();
-                if (knownPlaintext && knownPlaintext.length > 0) {
-                    const matches = this.results.filter(r => 
-                        r.text.toUpperCase().includes(knownPlaintext)).length;
-                    html += `<p>Found ${matches} results containing "${knownPlaintext}"</p>`;
-                }
-                
-                // Best score
-                const bestResult = this.results[0];
-                
-                html += `<div class="result-item best">
-                    <div class="result-key">Best Result: ${bestResult.key}</div>
-                    <div class="result-text">${this.highlightPatterns(bestResult.text)}</div>
-                    <div class="result-score">
-                        <span>Score: ${bestResult.score.toFixed(4)}</span>
-                        <span>Trigrams: ${bestResult.counts.trigrams || 0}</span>
-                        <span>Quadgrams: ${bestResult.counts.quadgrams || 0}</span>
-                    </div>
-                </div>`;
-                
-                // Common trigrams and quadgrams in best results
-                const topResults = this.results.slice(0, 10);
-                
-                const trigramCounts = {};
-                const quadgramCounts = {};
-                
-                topResults.forEach(result => {
-                    const text = result.text.toUpperCase();
-                    
-                    // Count trigrams
-                    for (let i = 0; i < text.length - 2; i++) {
-                        const trigram = text.substr(i, 3);
-                        trigramCounts[trigram] = (trigramCounts[trigram] || 0) + 1;
-                    }
-                    
-                    // Count quadgrams
-                    for (let i = 0; i < text.length - 3; i++) {
-                        const quadgram = text.substr(i, 4);
-                        quadgramCounts[quadgram] = (quadgramCounts[quadgram] || 0) + 1;
-                    }
-                });
-                
-                // Sort and get top trigrams/quadgrams
-                const topTrigrams = Object.entries(trigramCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 10);
-                
-                const topQuadgrams = Object.entries(quadgramCounts)
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 10);
-                
-                html += `<h4>Most Common Trigrams in Top Results</h4><ul>`;
-                topTrigrams.forEach(([trigram, count]) => {
-                    html += `<li>${trigram}: ${count} occurrences</li>`;
-                });
-                html += `</ul>`;
-                
-                html += `<h4>Most Common Quadgrams in Top Results</h4><ul>`;
-                topQuadgrams.forEach(([quadgram, count]) => {
-                    html += `<li>${quadgram}: ${count} occurrences</li>`;
-                });
-                html += `</ul>`;
-                
-                this.elements.statsContainer.innerHTML = html;
+                const h = Math.floor(seconds / 3600);
+                const m = Math.floor((seconds % 3600) / 60);
+                const s = Math.floor(seconds % 60);
+                return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
             }
             
             showError(message) {
                 this.elements.status.textContent = message;
-                this.elements.status.style.color = 'var(--danger)';
+                this.elements.status.style.color = 'var(--system-red)';
                 
                 setTimeout(() => {
                     this.elements.status.style.color = '';
@@ -1252,9 +754,9 @@
             }
         }
 
-        // Initialize the application when page loads
+        // Initialize app
         window.addEventListener('load', () => {
-            const trifidCracker = new TrifidCracker();
+            new TrifidCracker();
         });
     </script>
 </body>
