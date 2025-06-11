@@ -3,25 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional Trifid Cipher Cracker</title>
+    <title>Advanced Trifid Cipher Cracker</title>
     <style>
         :root {
             --primary: #007AFF;
+            --primary-light: rgba(0, 122, 255, 0.1);
+            --secondary: #34C759;
+            --tertiary: #FF9500;
+            --danger: #FF3B30;
             --background: #F2F2F7;
             --card: #FFFFFF;
             --text: #1C1C1E;
             --secondary-text: #8E8E93;
             --border: #D1D1D6;
+            --highlight-plaintext: #FFD700;
+            --highlight-trigram: rgba(52, 199, 89, 0.3);
+            --highlight-quadgram: rgba(0, 122, 255, 0.3);
         }
         
         @media (prefers-color-scheme: dark) {
             :root {
                 --primary: #0A84FF;
+                --primary-light: rgba(10, 132, 255, 0.2);
+                --secondary: #30D158;
+                --tertiary: #FF9F0A;
+                --danger: #FF453A;
                 --background: #1C1C1E;
                 --card: #2C2C2E;
                 --text: #FFFFFF;
                 --secondary-text: #8E8E93;
                 --border: #38383A;
+                --highlight-plaintext: #FFD700;
+                --highlight-trigram: rgba(48, 209, 88, 0.3);
+                --highlight-quadgram: rgba(10, 132, 255, 0.3);
             }
         }
         
@@ -121,7 +135,7 @@
         }
         
         .danger-button {
-            background-color: #FF3B30;
+            background-color: var(--danger);
             color: white;
         }
         
@@ -170,7 +184,7 @@
         
         .result-item.best {
             border-left: 4px solid var(--primary);
-            background-color: rgba(0, 122, 255, 0.1);
+            background-color: var(--primary-light);
         }
         
         .result-key {
@@ -183,12 +197,15 @@
             font-family: monospace;
             margin-bottom: 4px;
             white-space: pre-wrap;
-            word-break: break-all;
+            word-break: break-word;
+            line-height: 1.5;
         }
         
         .result-score {
             font-size: 14px;
             color: var(--secondary-text);
+            display: flex;
+            justify-content: space-between;
         }
         
         .settings-grid {
@@ -216,6 +233,131 @@
             font-size: 12px;
             font-weight: 500;
         }
+        
+        .badge-secondary {
+            background-color: var(--secondary);
+        }
+        
+        .badge-tertiary {
+            background-color: var(--tertiary);
+        }
+        
+        .highlight-plaintext {
+            background-color: var(--highlight-plaintext);
+            font-weight: bold;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+        
+        .highlight-trigram {
+            background-color: var(--highlight-trigram);
+            border-radius: 2px;
+        }
+        
+        .highlight-quadgram {
+            background-color: var(--highlight-quadgram);
+            border-radius: 2px;
+        }
+        
+        .cube-visualization {
+            margin-top: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            background-color: var(--background);
+            overflow-x: auto;
+        }
+        
+        .cube-layer {
+            margin-bottom: 12px;
+        }
+        
+        .cube-layer-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            color: var(--secondary-text);
+        }
+        
+        .cube-row {
+            display: flex;
+            margin-bottom: 2px;
+        }
+        
+        .cube-cell {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border);
+            margin-right: 2px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .stats-container {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+        
+        .stat-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            background-color: var(--background);
+            border-radius: 8px;
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--secondary-text);
+        }
+        
+        .keyboard-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .keyboard-button {
+            padding: 6px 12px;
+            border-radius: 6px;
+            background-color: var(--background);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+        
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid var(--primary);
+            font-weight: 500;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -225,12 +367,12 @@
             
             <div class="form-group">
                 <label for="ciphertext">Ciphertext</label>
-                <textarea id="ciphertext">OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR</textarea>
+                <textarea id="ciphertext" spellcheck="false">OBKRUOXOGHULBSOLIFBBWFLRVQQPRNGKSSOTWTQSJQSSEKZZWATJKLUDIAWINFBNYPVTTMZFPKWGDKZXTJCDIGKUHUAUEKCAR</textarea>
             </div>
             
             <div class="form-group">
                 <label for="alphabet">Alphabet (27 chars for 3×3×3 cube)</label>
-                <input id="alphabet" value="ABCDEFGHIKLMNOPQRSTUVWXYZ?*" placeholder="Enter custom alphabet">
+                <input id="alphabet" value="ABCDEFGHIKLMNOPQRSTUVWXYZ?*" placeholder="Enter custom alphabet" spellcheck="false">
             </div>
             
             <div class="settings-grid">
@@ -255,12 +397,17 @@
             
             <div class="form-group">
                 <label for="knownPlaintext">Known Plaintext (for verification)</label>
-                <input id="knownPlaintext" placeholder="e.g., BERLIN">
+                <input id="knownPlaintext" placeholder="e.g., BERLIN" spellcheck="false">
             </div>
             
             <div class="form-group">
                 <label for="keyLength">Key Length (for partial search)</label>
                 <input id="keyLength" type="number" value="6" min="1" max="20">
+            </div>
+            
+            <div class="form-group">
+                <label for="period">Trifid Period</label>
+                <input id="period" type="number" value="5" min="1" max="20">
             </div>
             
             <div class="form-group">
@@ -274,6 +421,7 @@
             <div class="button-group">
                 <button id="startButton" class="primary-button">Start Cracking</button>
                 <button id="stopButton" class="danger-button" disabled>Stop</button>
+                <button id="pauseButton" class="secondary-button" disabled>Pause</button>
             </div>
             
             <div class="progress-container">
@@ -282,11 +430,49 @@
                 </div>
                 <div id="status" class="status-text">Ready</div>
             </div>
+            
+            <div class="stats-container">
+                <div class="stat-item">
+                    <div class="stat-value" id="keysTested">0</div>
+                    <div class="stat-label">Keys Tested</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="keysPerSec">0</div>
+                    <div class="stat-label">Keys/Sec</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalPossible">∞</div>
+                    <div class="stat-label">Total Possible</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="timeRemaining">--</div>
+                    <div class="stat-label">Est. Time</div>
+                </div>
+            </div>
         </div>
         
         <div class="card">
-            <div class="card-title">Results <span id="resultsCount" class="badge">0</span></div>
-            <div id="results" class="results-container"></div>
+            <div class="tabs">
+                <div class="tab active" data-tab="results">Results <span id="resultsCount" class="badge">0</span></div>
+                <div class="tab" data-tab="cube">Cube Visualization</div>
+                <div class="tab" data-tab="stats">Statistics</div>
+            </div>
+            
+            <div id="results" class="tab-content active">
+                <div id="resultsContainer" class="results-container"></div>
+            </div>
+            
+            <div id="cube" class="tab-content">
+                <div class="cube-visualization" id="cubeVisualization">
+                    <p>No cube generated yet. Start cracking to see the cube visualization.</p>
+                </div>
+            </div>
+            
+            <div id="stats" class="tab-content">
+                <div id="statsContainer" class="results-container">
+                    <p>Statistics will appear here after analysis.</p>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -296,18 +482,28 @@
             workerPath: 'trifid-worker.js',
             maxWorkers: 16,
             resultsLimit: 1000,
-            maxKeysPerWorker: 100000
+            maxKeysPerWorker: 100000,
+            updateInterval: 1000,
+            maxResultsToKeep: 10000
         };
         
         // State
         let state = {
             isRunning: false,
+            isPaused: false,
             workers: [],
             activeWorkers: 0,
             bestScore: -Infinity,
             resultsCount: 0,
             startTime: null,
-            keysTested: 0
+            keysTested: 0,
+            totalPossibleKeys: Infinity,
+            results: [],
+            currentCube: null,
+            currentKey: null,
+            updateIntervalId: null,
+            workerQueue: [],
+            processedKeys: new Set()
         };
         
         // DOM Elements
@@ -318,26 +514,78 @@
             searchMode: document.getElementById('searchMode'),
             knownPlaintext: document.getElementById('knownPlaintext'),
             keyLength: document.getElementById('keyLength'),
+            period: document.getElementById('period'),
             workerCount: document.getElementById('workerCount'),
             workerStatus: document.getElementById('workerStatus'),
             startButton: document.getElementById('startButton'),
             stopButton: document.getElementById('stopButton'),
+            pauseButton: document.getElementById('pauseButton'),
             progressBar: document.getElementById('progressBar'),
             status: document.getElementById('status'),
-            results: document.getElementById('results'),
-            resultsCount: document.getElementById('resultsCount')
+            resultsContainer: document.getElementById('resultsContainer'),
+            cubeVisualization: document.getElementById('cubeVisualization'),
+            statsContainer: document.getElementById('statsContainer'),
+            resultsCount: document.getElementById('resultsCount'),
+            keysTested: document.getElementById('keysTested'),
+            keysPerSec: document.getElementById('keysPerSec'),
+            totalPossible: document.getElementById('totalPossible'),
+            timeRemaining: document.getElementById('timeRemaining'),
+            tabs: document.querySelectorAll('.tab'),
+            tabContents: document.querySelectorAll('.tab-content')
         };
         
         // Initialize
         function init() {
             elements.startButton.addEventListener('click', startCracking);
             elements.stopButton.addEventListener('click', stopCracking);
+            elements.pauseButton.addEventListener('click', togglePause);
+            
+            // Tab switching
+            elements.tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
             
             // Update worker count based on hardware
             updateOptimalWorkerCount();
             
             // Load saved settings if available
             loadSettings();
+            
+            // Update total possible keys when parameters change
+            elements.alphabet.addEventListener('input', updateTotalPossibleKeys);
+            elements.keyLength.addEventListener('input', updateTotalPossibleKeys);
+            elements.searchMode.addEventListener('change', updateTotalPossibleKeys);
+            elements.cubeSize.addEventListener('change', updateTotalPossibleKeys);
+            
+            // Initial calculation
+            updateTotalPossibleKeys();
+        }
+        
+        // Switch between tabs
+        function switchTab(tabName) {
+            elements.tabs.forEach(tab => {
+                if (tab.getAttribute('data-tab') === tabName) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            
+            elements.tabContents.forEach(content => {
+                if (content.id === tabName) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+            
+            // Refresh cube visualization if needed
+            if (tabName === 'cube' && state.currentCube) {
+                renderCubeVisualization(state.currentCube);
+            }
         }
         
         // Determine optimal worker count
@@ -350,7 +598,9 @@
         // Update worker status display
         function updateWorkerStatus() {
             elements.workerStatus.textContent = 
-                state.isRunning ? `${state.activeWorkers} active` : 'Idle';
+                state.isRunning ? 
+                    `${state.activeWorkers} active${state.isPaused ? ' (paused)' : ''}` : 
+                    'Idle';
         }
         
         // Save settings to localStorage
@@ -362,6 +612,7 @@
                 searchMode: elements.searchMode.value,
                 knownPlaintext: elements.knownPlaintext.value,
                 keyLength: elements.keyLength.value,
+                period: elements.period.value,
                 workerCount: elements.workerCount.value
             };
             
@@ -380,10 +631,46 @@
                     elements.searchMode.value = settings.searchMode || elements.searchMode.value;
                     elements.knownPlaintext.value = settings.knownPlaintext || '';
                     elements.keyLength.value = settings.keyLength || elements.keyLength.value;
+                    elements.period.value = settings.period || elements.period.value;
                     elements.workerCount.value = settings.workerCount || elements.workerCount.value;
                 } catch (e) {
                     console.error('Failed to load settings', e);
                 }
+            }
+        }
+        
+        // Calculate total possible keys based on current settings
+        function updateTotalPossibleKeys() {
+            const alphabet = elements.alphabet.value;
+            const keyLength = parseInt(elements.keyLength.value);
+            const searchMode = elements.searchMode.value;
+            const cubeSize = parseInt(elements.cubeSize.value);
+            
+            if (!alphabet || alphabet.length === 0) {
+                elements.totalPossible.textContent = '∞';
+                state.totalPossibleKeys = Infinity;
+                return;
+            }
+            
+            let total;
+            
+            if (searchMode === 'full') {
+                // For full search, we're using random keys so we can't calculate total
+                total = Infinity;
+            } else if (searchMode === 'partial') {
+                // Partial search: alphabet_size ^ key_length
+                total = Math.pow(alphabet.length, keyLength);
+            } else {
+                // Known plaintext mode - hard to estimate
+                total = Infinity;
+            }
+            
+            state.totalPossibleKeys = total;
+            
+            if (total === Infinity) {
+                elements.totalPossible.textContent = '∞';
+            } else {
+                elements.totalPossible.textContent = total.toLocaleString();
             }
         }
         
@@ -398,6 +685,7 @@
             const searchMode = elements.searchMode.value;
             const knownPlaintext = elements.knownPlaintext.value.toUpperCase();
             const keyLength = parseInt(elements.keyLength.value);
+            const period = parseInt(elements.period.value);
             const workerCount = parseInt(elements.workerCount.value);
             
             if (!ciphertext) {
@@ -417,18 +705,31 @@
             // Reset state
             state = {
                 isRunning: true,
+                isPaused: false,
                 workers: [],
                 activeWorkers: 0,
                 bestScore: -Infinity,
                 resultsCount: 0,
                 startTime: performance.now(),
-                keysTested: 0
+                keysTested: 0,
+                totalPossibleKeys: state.totalPossibleKeys,
+                results: [],
+                currentCube: null,
+                currentKey: null,
+                updateIntervalId: null,
+                workerQueue: [],
+                processedKeys: new Set()
             };
             
-            elements.results.innerHTML = '';
+            elements.resultsContainer.innerHTML = '';
+            elements.statsContainer.innerHTML = '<p>Statistics will appear here after analysis.</p>';
             elements.resultsCount.textContent = '0';
+            elements.keysTested.textContent = '0';
+            elements.keysPerSec.textContent = '0';
+            elements.timeRemaining.textContent = '--';
             elements.startButton.disabled = true;
             elements.stopButton.disabled = false;
+            elements.pauseButton.disabled = false;
             elements.progressBar.style.width = '0%';
             elements.status.textContent = 'Initializing workers...';
             
@@ -470,6 +771,10 @@
                     keysPerWorker = Math.ceil(config.maxKeysPerWorker / workerCount);
                 }
                 
+                // Start periodic updates
+                state.updateIntervalId = setInterval(updateStats, config.updateInterval);
+                
+                // Start workers
                 state.workers.forEach((worker, index) => {
                     worker.postMessage({
                         type: 'start',
@@ -479,6 +784,7 @@
                         searchMode: searchMode,
                         knownPlaintext: knownPlaintext,
                         keyLength: keyLength,
+                        period: period,
                         workerId: index,
                         totalWorkers: workerCount,
                         keysToTest: keysPerWorker
@@ -498,20 +804,28 @@
             switch (data.type) {
                 case 'progress':
                     state.keysTested += data.keysTested;
-                    updateProgress();
+                    if (data.cube) {
+                        state.currentCube = data.cube;
+                        state.currentKey = data.key;
+                    }
                     break;
                     
                 case 'result':
                     state.resultsCount++;
-                    elements.resultsCount.textContent = state.resultsCount.toLocaleString();
                     
+                    // Add to results (but limit how many we keep in memory)
+                    if (state.results.length < config.maxResultsToKeep) {
+                        state.results.push(data);
+                    }
+                    
+                    // Update best score if needed
                     if (data.score > state.bestScore) {
                         state.bestScore = data.score;
-                        addResult(data, true);
-                    } else if (state.resultsCount % 10 === 0) {
-                        // Only show some results to avoid flooding
-                        addResult(data, false);
                     }
+                    
+                    // Update UI
+                    elements.resultsCount.textContent = state.resultsCount.toLocaleString();
+                    addResult(data, data.score === state.bestScore);
                     break;
                     
                 case 'complete':
@@ -528,20 +842,45 @@
             }
         }
         
-        // Update progress display
-        function updateProgress() {
-            const elapsed = (performance.now() - state.startTime) / 1000;
-            const keysPerSec = (state.keysTested / elapsed).toFixed(0);
+        // Update statistics display
+        function updateStats() {
+            if (!state.isRunning || state.isPaused) return;
             
-            elements.status.textContent = 
-                `Testing keys... (${state.keysTested.toLocaleString()} keys, ${keysPerSec} keys/s)`;
+            const elapsed = (performance.now() - state.startTime) / 1000;
+            const keysPerSec = elapsed > 0 ? (state.keysTested / elapsed).toFixed(0) : 0;
+            
+            elements.keysTested.textContent = state.keysTested.toLocaleString();
+            elements.keysPerSec.textContent = keysPerSec.toLocaleString();
+            
+            // Calculate estimated time remaining if we know total possible keys
+            if (state.totalPossibleKeys !== Infinity && keysPerSec > 0) {
+                const remainingKeys = state.totalPossibleKeys - state.keysTested;
+                const remainingTime = remainingKeys / keysPerSec;
+                
+                if (remainingTime > 0) {
+                    elements.timeRemaining.textContent = formatTime(remainingTime);
+                }
+            }
             
             // Update progress bar if we have an estimate
-            if (state.workers[0] && state.workers[0].keysToTest) {
-                const totalKeys = state.workers[0].keysToTest * state.workers.length;
-                const progress = Math.min(100, (state.keysTested / totalKeys) * 100);
+            if (state.totalPossibleKeys !== Infinity && state.totalPossibleKeys > 0) {
+                const progress = Math.min(100, (state.keysTested / state.totalPossibleKeys) * 100);
                 elements.progressBar.style.width = `${progress}%`;
             }
+        }
+        
+        // Format time in HH:MM:SS
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            seconds %= 3600;
+            const minutes = Math.floor(seconds / 60);
+            seconds = Math.floor(seconds % 60);
+            
+            return [
+                hours.toString().padStart(2, '0'),
+                minutes.toString().padStart(2, '0'),
+                seconds.toString().padStart(2, '0')
+            ].join(':');
         }
         
         // Add result to the UI
@@ -549,17 +888,130 @@
             const resultItem = document.createElement('div');
             resultItem.className = `result-item ${isBest ? 'best' : ''}`;
             
+            // Highlight known plaintext if provided
+            let displayText = data.text;
+            const knownPlaintext = elements.knownPlaintext.value.toUpperCase();
+            
+            if (knownPlaintext && knownPlaintext.length > 0) {
+                const index = displayText.toUpperCase().indexOf(knownPlaintext);
+                if (index >= 0) {
+                    const before = displayText.substring(0, index);
+                    const match = displayText.substring(index, index + knownPlaintext.length);
+                    const after = displayText.substring(index + knownPlaintext.length);
+                    displayText = `${before}<span class="highlight-plaintext">${match}</span>${after}`;
+                }
+            }
+            
+            // Highlight trigrams and quadgrams
+            displayText = highlightPatterns(displayText);
+            
+            // Add cube visualization button
+            const cubeButton = document.createElement('button');
+            cubeButton.className = 'keyboard-button';
+            cubeButton.textContent = 'Show Cube';
+            cubeButton.onclick = () => {
+                if (data.cube) {
+                    state.currentCube = data.cube;
+                    state.currentKey = data.key;
+                    renderCubeVisualization(data.cube);
+                    switchTab('cube');
+                }
+            };
+            
             resultItem.innerHTML = `
                 <div class="result-key">Key: ${data.key}</div>
-                <div class="result-text">${data.text}</div>
-                <div class="result-score">Score: ${data.score.toFixed(4)}</div>
+                <div class="result-text">${displayText}</div>
+                <div class="result-score">
+                    <span>Score: ${data.score.toFixed(4)}</span>
+                    <span>Trigrams: ${data.trigrams || 0}</span>
+                    <span>Quadgrams: ${data.quadgrams || 0}</span>
+                </div>
             `;
             
-            elements.results.insertBefore(resultItem, elements.results.firstChild);
+            resultItem.querySelector('.result-score').appendChild(cubeButton);
+            
+            elements.resultsContainer.insertBefore(resultItem, elements.resultsContainer.firstChild);
             
             // Limit number of displayed results
-            if (elements.results.children.length > config.resultsLimit) {
-                elements.results.removeChild(elements.results.lastChild);
+            if (elements.resultsContainer.children.length > config.resultsLimit) {
+                elements.resultsContainer.removeChild(elements.resultsContainer.lastChild);
+            }
+        }
+        
+        // Highlight trigrams and quadgrams in text
+        function highlightPatterns(text) {
+            // Common English trigrams
+            const commonTrigrams = [
+                'THE', 'AND', 'ING', 'ENT', 'ION', 'HER', 'FOR', 'THA', 'NTH', 'INT',
+                'ERE', 'TIO', 'TER', 'EST', 'ERS', 'ATI', 'HAT', 'ATE', 'ALL', 'ETH'
+            ];
+            
+            // Common English quadgrams
+            const commonQuadgrams = [
+                'TION', 'NTHE', 'THER', 'THAT', 'OFTHE', 'INGT', 'THEM', 'THEI', 
+                'DTHE', 'ATIO', 'ETHE', 'THIS', 'TING', 'WITH', 'STHE', 'HERE'
+            ];
+            
+            let highlighted = text;
+            
+            // Highlight quadgrams first (longer matches take precedence)
+            for (const quadgram of commonQuadgrams) {
+                const regex = new RegExp(quadgram, 'gi');
+                highlighted = highlighted.replace(regex, 
+                    match => `<span class="highlight-quadgram">${match}</span>`);
+            }
+            
+            // Then highlight trigrams (but don't overlap with quadgrams)
+            for (const trigram of commonTrigrams) {
+                const regex = new RegExp(`(?<!")${trigram}(?!")`, 'gi');
+                highlighted = highlighted.replace(regex, 
+                    match => `<span class="highlight-trigram">${match}</span>`);
+            }
+            
+            return highlighted;
+        }
+        
+        // Render cube visualization
+        function renderCubeVisualization(cube) {
+            if (!cube || !cube.length) return;
+            
+            let html = `<h3>Cube for key: ${state.currentKey || 'None'}</h3>`;
+            
+            for (let layer = 0; layer < cube.length; layer++) {
+                html += `<div class="cube-layer">
+                    <div class="cube-layer-title">Layer ${layer + 1}</div>`;
+                
+                for (let row = 0; row < cube[layer].length; row++) {
+                    html += '<div class="cube-row">';
+                    
+                    for (let col = 0; col < cube[layer][row].length; col++) {
+                        const char = cube[layer][row][col];
+                        html += `<div class="cube-cell">${char}</div>`;
+                    }
+                    
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            }
+            
+            elements.cubeVisualization.innerHTML = html;
+        }
+        
+        // Toggle pause state
+        function togglePause() {
+            if (!state.isRunning) return;
+            
+            state.isPaused = !state.isPaused;
+            
+            if (state.isPaused) {
+                elements.pauseButton.textContent = 'Resume';
+                elements.status.textContent = 'Paused';
+                state.workers.forEach(worker => worker.postMessage({ type: 'pause' }));
+            } else {
+                elements.pauseButton.textContent = 'Pause';
+                elements.status.textContent = 'Resuming...';
+                state.workers.forEach(worker => worker.postMessage({ type: 'resume' }));
             }
         }
         
@@ -571,16 +1023,103 @@
             state.workers.forEach(worker => worker.terminate());
             state.workers = [];
             state.activeWorkers = 0;
+            
+            if (state.updateIntervalId) {
+                clearInterval(state.updateIntervalId);
+                state.updateIntervalId = null;
+            }
+            
             updateWorkerStatus();
             
             elements.startButton.disabled = false;
             elements.stopButton.disabled = true;
+            elements.pauseButton.disabled = true;
+            elements.pauseButton.textContent = 'Pause';
+            
+            // Generate statistics
+            generateStatistics();
+        }
+        
+        // Generate statistics from results
+        function generateStatistics() {
+            if (state.results.length === 0) return;
+            
+            let html = '<h3>Analysis Results</h3>';
+            
+            // Count of results with known plaintext
+            const knownPlaintext = elements.knownPlaintext.value.toUpperCase();
+            if (knownPlaintext && knownPlaintext.length > 0) {
+                const matches = state.results.filter(r => 
+                    r.text.toUpperCase().includes(knownPlaintext)).length;
+                html += `<p>Found ${matches} results containing "${knownPlaintext}"</p>`;
+            }
+            
+            // Best score
+            const bestResult = state.results.reduce((best, current) => 
+                current.score > best.score ? current : best, state.results[0]);
+            
+            html += `<div class="result-item best">
+                <div class="result-key">Best Result: ${bestResult.key}</div>
+                <div class="result-text">${highlightPatterns(bestResult.text)}</div>
+                <div class="result-score">
+                    <span>Score: ${bestResult.score.toFixed(4)}</span>
+                    <span>Trigrams: ${bestResult.trigrams || 0}</span>
+                    <span>Quadgrams: ${bestResult.quadgrams || 0}</span>
+                </div>
+            </div>`;
+            
+            // Common trigrams and quadgrams in best results
+            const topResults = state.results
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 10);
+            
+            const trigramCounts = {};
+            const quadgramCounts = {};
+            
+            topResults.forEach(result => {
+                const text = result.text.toUpperCase();
+                
+                // Count trigrams
+                for (let i = 0; i < text.length - 2; i++) {
+                    const trigram = text.substr(i, 3);
+                    trigramCounts[trigram] = (trigramCounts[trigram] || 0) + 1;
+                }
+                
+                // Count quadgrams
+                for (let i = 0; i < text.length - 3; i++) {
+                    const quadgram = text.substr(i, 4);
+                    quadgramCounts[quadgram] = (quadgramCounts[quadgram] || 0) + 1;
+                }
+            });
+            
+            // Sort and get top trigrams/quadgrams
+            const topTrigrams = Object.entries(trigramCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            
+            const topQuadgrams = Object.entries(quadgramCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            
+            html += `<h4>Most Common Trigrams in Top Results</h4><ul>`;
+            topTrigrams.forEach(([trigram, count]) => {
+                html += `<li>${trigram}: ${count} occurrences</li>`;
+            });
+            html += `</ul>`;
+            
+            html += `<h4>Most Common Quadgrams in Top Results</h4><ul>`;
+            topQuadgrams.forEach(([quadgram, count]) => {
+                html += `<li>${quadgram}: ${count} occurrences</li>`;
+            });
+            html += `</ul>`;
+            
+            elements.statsContainer.innerHTML = html;
         }
         
         // Show error message
         function showError(message) {
             elements.status.textContent = message;
-            elements.status.style.color = '#FF3B30';
+            elements.status.style.color = 'var(--danger)';
             
             setTimeout(() => {
                 elements.status.style.color = '';
@@ -590,6 +1129,323 @@
         
         // Initialize when page loads
         window.addEventListener('load', init);
+    </script>
+
+    <script>
+        // Inline worker implementation (trifid-worker.js)
+        const workerCode = `
+        // English language statistics for scoring
+        const ENGLISH_FREQUENCY = {
+            'A': 0.08167, 'B': 0.01492, 'C': 0.02782, 'D': 0.04253, 'E': 0.12702,
+            'F': 0.02228, 'G': 0.02015, 'H': 0.06094, 'I': 0.06966, 'J': 0.00153,
+            'K': 0.00772, 'L': 0.04025, 'M': 0.02406, 'N': 0.06749, 'O': 0.07507,
+            'P': 0.01929, 'Q': 0.00095, 'R': 0.05987, 'S': 0.06327, 'T': 0.09056,
+            'U': 0.02758, 'V': 0.00978, 'W': 0.02360, 'X': 0.00150, 'Y': 0.01974,
+            'Z': 0.00074
+        };
+
+        const ENGLISH_TRIGRAMS = {
+            "THE": 0.0181, "AND": 0.0073, "ING": 0.0072, "ENT": 0.0042, "ION": 0.0042,
+            "HER": 0.0036, "FOR": 0.0034, "THA": 0.0033, "NTH": 0.0033, "INT": 0.0032,
+            "ERE": 0.0031, "TIO": 0.0031, "TER": 0.0030, "EST": 0.0028, "ERS": 0.0028,
+            "ATI": 0.0026, "HAT": 0.0026, "ATE": 0.0025, "ALL": 0.0025, "ETH": 0.0024,
+            "HIS": 0.0024, "VER": 0.0024, "ITH": 0.0023, "STH": 0.0023, "OTH": 0.0022
+        };
+
+        const ENGLISH_QUADGRAMS = {
+            "TION": 0.0015, "NTHE": 0.0014, "THER": 0.0013, "THAT": 0.0012, 
+            "OFTHE": 0.0011, "INGT": 0.0010, "THEM": 0.0009, "THEI": 0.0009,
+            "DTHE": 0.0009, "ATIO": 0.0009, "ETHE": 0.0008, "THIS": 0.0008,
+            "TING": 0.0008, "WITH": 0.0008, "STHE": 0.0008, "HERE": 0.0007
+        };
+
+        // Score text based on letter, trigram and quadgram frequency
+        function scoreText(text) {
+            // Letter frequency score
+            let letterScore = 0;
+            const letterCounts = {};
+            let totalLetters = 0;
+            
+            for (const char of text.toUpperCase()) {
+                if (ENGLISH_FREQUENCY[char]) {
+                    letterCounts[char] = (letterCounts[char] || 0) + 1;
+                    totalLetters++;
+                }
+            }
+            
+            // Calculate chi-squared statistic
+            for (const char in ENGLISH_FREQUENCY) {
+                const expected = ENGLISH_FREQUENCY[char] * totalLetters;
+                const observed = letterCounts[char] || 0;
+                const difference = observed - expected;
+                letterScore += (difference * difference) / expected;
+            }
+            
+            // Invert so higher is better
+            letterScore = 1 / (1 + letterScore);
+            
+            // Trigram score
+            let trigramScore = 0;
+            let trigramCount = 0;
+            text = text.toUpperCase();
+            for (let i = 0; i < text.length - 2; i++) {
+                const trigram = text.substr(i, 3);
+                if (ENGLISH_TRIGRAMS[trigram]) {
+                    trigramScore += ENGLISH_TRIGRAMS[trigram];
+                    trigramCount++;
+                }
+            }
+            
+            // Quadgram score
+            let quadgramScore = 0;
+            let quadgramCount = 0;
+            for (let i = 0; i < text.length - 3; i++) {
+                const quadgram = text.substr(i, 4);
+                if (ENGLISH_QUADGRAMS[quadgram]) {
+                    quadgramScore += ENGLISH_QUADGRAMS[quadgram];
+                    quadgramCount++;
+                }
+            }
+            
+            // Normalize scores by text length
+            trigramScore = trigramScore / (text.length / 3);
+            quadgramScore = quadgramScore / (text.length / 4);
+            
+            // Combined score (weighted)
+            return {
+                score: (letterScore * 0.2 + trigramScore * 0.5 + quadgramScore * 0.3) * 100,
+                trigrams: trigramCount,
+                quadgrams: quadgramCount
+            };
+        }
+
+        // Generate Trifid cube with key-based permutation
+        function generateCube(alphabet, size, key = '') {
+            const cube = [];
+            const cubeSize = size * size * size;
+            
+            // Create keyed alphabet
+            let keyedAlphabet = '';
+            const usedChars = new Set();
+            
+            // Add key characters first (without duplicates)
+            for (const char of key.toUpperCase()) {
+                if (!usedChars.has(char) && alphabet.includes(char)) {
+                    keyedAlphabet += char;
+                    usedChars.add(char);
+                }
+            }
+            
+            // Add remaining alphabet characters
+            for (const char of alphabet) {
+                if (!usedChars.has(char)) {
+                    keyedAlphabet += char;
+                }
+            }
+            
+            // Fill the cube
+            for (let layer = 0; layer < size; layer++) {
+                cube.push([]);
+                for (let row = 0; row < size; row++) {
+                    cube[layer].push([]);
+                    for (let col = 0; col < size; col++) {
+                        const index = layer * size * size + row * size + col;
+                        cube[layer][row][col] = keyedAlphabet[index % keyedAlphabet.length];
+                    }
+                }
+            }
+            
+            return cube;
+        }
+
+        // Generate random key of specified length
+        function generateRandomKey(length, alphabet) {
+            let key = '';
+            for (let i = 0; i < length; i++) {
+                key += alphabet[Math.floor(Math.random() * alphabet.length)];
+            }
+            return key;
+        }
+
+        // Generate sequential key for exhaustive search
+        function generateSequentialKey(index, alphabet, keyLength) {
+            let key = '';
+            for (let i = 0; i < keyLength; i++) {
+                key += alphabet[index % alphabet.length];
+                index = Math.floor(index / alphabet.length);
+            }
+            return key;
+        }
+
+        // Full Trifid decryption with key
+        function decryptTrifid(ciphertext, cube, key, period = 5) {
+            const size = cube.length;
+            const coords = {};
+            
+            // Build coordinate map
+            for (let l = 0; l < size; l++) {
+                for (let r = 0; r < size; r++) {
+                    for (let c = 0; c < size; c++) {
+                        coords[cube[l][r][c]] = [l, r, c];
+                    }
+                }
+            }
+            
+            let decrypted = '';
+            const groupSize = period;
+            
+            // Process ciphertext in groups
+            for (let i = 0; i < ciphertext.length; i += groupSize) {
+                const group = ciphertext.substr(i, groupSize);
+                if (group.length === 0) break;
+                
+                // Extract coordinates for each character in group
+                const layers = [];
+                const rows = [];
+                const cols = [];
+                
+                for (const char of group) {
+                    const coord = coords[char];
+                    if (coord) {
+                        layers.push(coord[0]);
+                        rows.push(coord[1]);
+                        cols.push(coord[2]);
+                    } else {
+                        // Handle missing characters (use first layer as default)
+                        layers.push(0);
+                        rows.push(0);
+                        cols.push(0);
+                    }
+                }
+                
+                // Reconstruct plaintext from coordinates
+                for (let j = 0; j < group.length; j++) {
+                    const l = layers[j];
+                    const r = rows[j];
+                    const c = cols[j];
+                    decrypted += cube[l][r][c];
+                }
+            }
+            
+            return decrypted;
+        }
+
+        // Main worker function
+        self.onmessage = function(e) {
+            const { 
+                type, 
+                ciphertext, 
+                alphabet, 
+                cubeSize, 
+                searchMode, 
+                knownPlaintext, 
+                keyLength,
+                period,
+                workerId,
+                totalWorkers,
+                keysToTest
+            } = e.data;
+            
+            if (type === 'pause') {
+                // Pause processing (we'll just wait for resume)
+                return;
+            }
+            
+            if (type === 'resume') {
+                // Resume processing
+                return;
+            }
+            
+            if (type !== 'start') return;
+            
+            let bestScore = -Infinity;
+            let bestText = '';
+            let bestKey = '';
+            let keysTested = 0;
+            const startTime = performance.now();
+            let lastUpdateTime = startTime;
+            
+            // Main cracking loop
+            for (let i = 0; i < keysToTest; i++) {
+                // Check for pause messages
+                if (self.paused) {
+                    while (self.paused) {
+                        // Wait for resume message
+                        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+                    }
+                }
+                
+                // Generate test key based on search mode
+                let testKey;
+                if (searchMode === 'full') {
+                    testKey = generateRandomKey(10, alphabet);
+                } else if (searchMode === 'partial') {
+                    testKey = generateSequentialKey(i, alphabet, keyLength);
+                } else {
+                    // Known plaintext mode - generate keys that might contain the known text
+                    testKey = generateRandomKey(keyLength, alphabet);
+                }
+                
+                // Generate cube with key permutation
+                const cube = generateCube(alphabet, cubeSize, testKey);
+                
+                // Decrypt with current key
+                const decrypted = decryptTrifid(ciphertext, cube, testKey, period);
+                const scoreData = scoreText(decrypted);
+                const score = scoreData.score;
+                
+                // Check for known plaintext if provided
+                let valid = true;
+                if (knownPlaintext && knownPlaintext.length > 0) {
+                    valid = decrypted.toUpperCase().includes(knownPlaintext);
+                }
+                
+                // Send progress update periodically
+                keysTested++;
+                const now = performance.now();
+                if (now - lastUpdateTime > 1000 || i === keysToTest - 1) {
+                    self.postMessage({
+                        type: 'progress',
+                        keysTested: keysTested,
+                        cube: cube,
+                        key: testKey
+                    });
+                    lastUpdateTime = now;
+                }
+                
+                // Send result if it's good
+                if (valid && score > bestScore * 0.9) { // Send anything close to best
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestText = decrypted;
+                        bestKey = testKey;
+                    }
+                    
+                    self.postMessage({
+                        type: 'result',
+                        key: testKey,
+                        text: decrypted,
+                        score: score,
+                        trigrams: scoreData.trigrams,
+                        quadgrams: scoreData.quadgrams,
+                        cube: cube
+                    });
+                }
+            }
+            
+            self.postMessage({ 
+                type: 'complete',
+                keysTested: keysTested
+            });
+        };
+        `;
+
+        // Create a Blob URL for the worker code
+        const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
+        const workerUrl = URL.createObjectURL(workerBlob);
+        
+        // Override the worker path in config
+        config.workerPath = workerUrl;
     </script>
 </body>
 </html>
