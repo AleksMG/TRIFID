@@ -358,6 +358,13 @@
         .tab-content.active {
             display: block;
         }
+        
+        .top-results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
@@ -377,21 +384,17 @@
             
             <div class="settings-grid">
                 <div class="form-group">
-                    <label for="cubeSize">Cube Size</label>
-                    <select id="cubeSize">
-                        <option value="3">3×3×3 (27 chars)</option>
-                        <option value="4">4×4×4 (64 chars)</option>
-                        <option value="5">5×5×5 (125 chars)</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
                     <label for="searchMode">Search Mode</label>
                     <select id="searchMode">
                         <option value="full">Full Key Search</option>
                         <option value="partial">Partial Key Search</option>
                         <option value="known">Known Plaintext</option>
                     </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="period">Trifid Period</label>
+                    <input id="period" type="number" value="5" min="1" max="20">
                 </div>
             </div>
             
@@ -403,11 +406,6 @@
             <div class="form-group">
                 <label for="keyLength">Key Length (for partial search)</label>
                 <input id="keyLength" type="number" value="6" min="1" max="20">
-            </div>
-            
-            <div class="form-group">
-                <label for="period">Trifid Period</label>
-                <input id="period" type="number" value="5" min="1" max="20">
             </div>
             
             <div class="form-group">
@@ -459,6 +457,10 @@
             </div>
             
             <div id="results" class="tab-content active">
+                <div class="top-results-header">
+                    <h3>Top 20 Results</h3>
+                    <div class="badge" id="bestScore">Best: 0.00</div>
+                </div>
                 <div id="resultsContainer" class="results-container"></div>
             </div>
             
@@ -481,10 +483,10 @@
         const config = {
             workerPath: 'trifid-worker.js',
             maxWorkers: 16,
-            resultsLimit: 1000,
+            resultsLimit: 20, // Only show top 20 results
             maxKeysPerWorker: 100000,
             updateInterval: 1000,
-            maxResultsToKeep: 10000
+            maxResultsToKeep: 100
         };
         
         // State
@@ -502,15 +504,14 @@
             currentCube: null,
             currentKey: null,
             updateIntervalId: null,
-            workerQueue: [],
-            processedKeys: new Set()
+            processedKeys: new Set(),
+            workerKeyRanges: {}
         };
         
         // DOM Elements
         const elements = {
             ciphertext: document.getElementById('ciphertext'),
             alphabet: document.getElementById('alphabet'),
-            cubeSize: document.getElementById('cubeSize'),
             searchMode: document.getElementById('searchMode'),
             knownPlaintext: document.getElementById('knownPlaintext'),
             keyLength: document.getElementById('keyLength'),
@@ -531,7 +532,8 @@
             totalPossible: document.getElementById('totalPossible'),
             timeRemaining: document.getElementById('timeRemaining'),
             tabs: document.querySelectorAll('.tab'),
-            tabContents: document.querySelectorAll('.tab-content')
+            tabContents: document.querySelectorAll('.tab-content'),
+            bestScore: document.getElementById('bestScore')
         };
         
         // Initialize
@@ -558,7 +560,6 @@
             elements.alphabet.addEventListener('input', updateTotalPossibleKeys);
             elements.keyLength.addEventListener('input', updateTotalPossibleKeys);
             elements.searchMode.addEventListener('change', updateTotalPossibleKeys);
-            elements.cubeSize.addEventListener('change', updateTotalPossibleKeys);
             
             // Initial calculation
             updateTotalPossibleKeys();
@@ -608,7 +609,6 @@
             const settings = {
                 ciphertext: elements.ciphertext.value,
                 alphabet: elements.alphabet.value,
-                cubeSize: elements.cubeSize.value,
                 searchMode: elements.searchMode.value,
                 knownPlaintext: elements.knownPlaintext.value,
                 keyLength: elements.keyLength.value,
@@ -627,7 +627,6 @@
                     const settings = JSON.parse(saved);
                     elements.ciphertext.value = settings.ciphertext || elements.ciphertext.value;
                     elements.alphabet.value = settings.alphabet || elements.alphabet.value;
-                    elements.cubeSize.value = settings.cubeSize || elements.cubeSize.value;
                     elements.searchMode.value = settings.searchMode || elements.searchMode.value;
                     elements.knownPlaintext.value = settings.knownPlaintext || '';
                     elements.keyLength.value = settings.keyLength || elements.keyLength.value;
@@ -644,7 +643,6 @@
             const alphabet = elements.alphabet.value;
             const keyLength = parseInt(elements.keyLength.value);
             const searchMode = elements.searchMode.value;
-            const cubeSize = parseInt(elements.cubeSize.value);
             
             if (!alphabet || alphabet.length === 0) {
                 elements.totalPossible.textContent = '∞';
@@ -681,7 +679,6 @@
             // Validate inputs
             const ciphertext = elements.ciphertext.value.toUpperCase().replace(/[^A-Z?*]/g, '');
             const alphabet = elements.alphabet.value.toUpperCase().replace(/[^A-Z?*]/g, '');
-            const cubeSize = parseInt(elements.cubeSize.value);
             const searchMode = elements.searchMode.value;
             const knownPlaintext = elements.knownPlaintext.value.toUpperCase();
             const keyLength = parseInt(elements.keyLength.value);
@@ -693,9 +690,9 @@
                 return;
             }
             
-            const requiredChars = Math.pow(cubeSize, 3);
+            const requiredChars = 27; // For 3×3×3 cube
             if (alphabet.length < requiredChars) {
-                showError(`Alphabet needs at least ${requiredChars} characters for ${cubeSize}×${cubeSize}×${cubeSize} cube!`);
+                showError(`Alphabet needs at least ${requiredChars} characters for 3×3×3 cube!`);
                 return;
             }
             
@@ -717,8 +714,8 @@
                 currentCube: null,
                 currentKey: null,
                 updateIntervalId: null,
-                workerQueue: [],
-                processedKeys: new Set()
+                processedKeys: new Set(),
+                workerKeyRanges: {}
             };
             
             elements.resultsContainer.innerHTML = '';
@@ -727,6 +724,7 @@
             elements.keysTested.textContent = '0';
             elements.keysPerSec.textContent = '0';
             elements.timeRemaining.textContent = '--';
+            elements.bestScore.textContent = 'Best: 0.00';
             elements.startButton.disabled = true;
             elements.stopButton.disabled = false;
             elements.pauseButton.disabled = false;
@@ -774,20 +772,26 @@
                 // Start periodic updates
                 state.updateIntervalId = setInterval(updateStats, config.updateInterval);
                 
-                // Start workers
+                // Start workers with unique key ranges
                 state.workers.forEach((worker, index) => {
+                    const workerId = index;
+                    const startIndex = index * keysPerWorker;
+                    const endIndex = startIndex + keysPerWorker - 1;
+                    
+                    state.workerKeyRanges[workerId] = { start: startIndex, end: endIndex };
+                    
                     worker.postMessage({
                         type: 'start',
                         ciphertext: ciphertext,
                         alphabet: alphabet,
-                        cubeSize: cubeSize,
                         searchMode: searchMode,
                         knownPlaintext: knownPlaintext,
                         keyLength: keyLength,
                         period: period,
-                        workerId: index,
+                        workerId: workerId,
                         totalWorkers: workerCount,
-                        keysToTest: keysPerWorker
+                        keysToTest: keysPerWorker,
+                        startIndex: startIndex
                     });
                 });
                 
@@ -813,19 +817,25 @@
                 case 'result':
                     state.resultsCount++;
                     
-                    // Add to results (but limit how many we keep in memory)
-                    if (state.results.length < config.maxResultsToKeep) {
+                    // Add to results if score is in top N
+                    if (state.results.length < config.maxResultsToKeep || data.score > state.results[state.results.length-1].score) {
                         state.results.push(data);
+                        // Keep results sorted by score descending
+                        state.results.sort((a, b) => b.score - a.score);
+                        // Trim to max results to keep
+                        if (state.results.length > config.maxResultsToKeep) {
+                            state.results.pop();
+                        }
+                        
+                        // Update best score if needed
+                        if (data.score > state.bestScore) {
+                            state.bestScore = data.score;
+                            elements.bestScore.textContent = `Best: ${data.score.toFixed(2)}`;
+                        }
+                        
+                        // Update UI
+                        updateResultsDisplay();
                     }
-                    
-                    // Update best score if needed
-                    if (data.score > state.bestScore) {
-                        state.bestScore = data.score;
-                    }
-                    
-                    // Update UI
-                    elements.resultsCount.textContent = state.resultsCount.toLocaleString();
-                    addResult(data, data.score === state.bestScore);
                     break;
                     
                 case 'complete':
@@ -840,6 +850,20 @@
                     }
                     break;
             }
+        }
+        
+        // Update results display with top 20 results
+        function updateResultsDisplay() {
+            elements.resultsCount.textContent = state.resultsCount.toLocaleString();
+            
+            // Clear and rebuild results
+            elements.resultsContainer.innerHTML = '';
+            
+            // Show top 20 results
+            const topResults = state.results.slice(0, config.resultsLimit);
+            topResults.forEach(result => {
+                addResult(result, result.score === state.bestScore);
+            });
         }
         
         // Update statistics display
@@ -929,13 +953,7 @@
             `;
             
             resultItem.querySelector('.result-score').appendChild(cubeButton);
-            
-            elements.resultsContainer.insertBefore(resultItem, elements.resultsContainer.firstChild);
-            
-            // Limit number of displayed results
-            if (elements.resultsContainer.children.length > config.resultsLimit) {
-                elements.resultsContainer.removeChild(elements.resultsContainer.lastChild);
-            }
+            elements.resultsContainer.appendChild(resultItem);
         }
         
         // Highlight trigrams and quadgrams in text
@@ -1055,8 +1073,7 @@
             }
             
             // Best score
-            const bestResult = state.results.reduce((best, current) => 
-                current.score > best.score ? current : best, state.results[0]);
+            const bestResult = state.results[0];
             
             html += `<div class="result-item best">
                 <div class="result-key">Best Result: ${bestResult.key}</div>
@@ -1069,9 +1086,7 @@
             </div>`;
             
             // Common trigrams and quadgrams in best results
-            const topResults = state.results
-                .sort((a, b) => b.score - a.score)
-                .slice(0, 10);
+            const topResults = state.results.slice(0, 10);
             
             const trigramCounts = {};
             const quadgramCounts = {};
@@ -1132,8 +1147,8 @@
     </script>
 
     <script>
-        // Inline worker implementation (trifid-worker.js)
-        const workerCode = `
+        // Worker implementation will be in a separate file
+        const workerBlob = new Blob([`
         // English language statistics for scoring
         const ENGLISH_FREQUENCY = {
             'A': 0.08167, 'B': 0.01492, 'C': 0.02782, 'D': 0.04253, 'E': 0.12702,
@@ -1219,10 +1234,9 @@
             };
         }
 
-        // Generate Trifid cube with key-based permutation
-        function generateCube(alphabet, size, key = '') {
-            const cube = [];
-            const cubeSize = size * size * size;
+        // Generate Trifid cube with key-based permutation (3×3×3 only)
+        function generateCube(alphabet, key = '') {
+            const cube = [[[], [], []], [[], [], []], [[], [], []]];
             
             // Create keyed alphabet
             let keyedAlphabet = '';
@@ -1243,13 +1257,11 @@
                 }
             }
             
-            // Fill the cube
-            for (let layer = 0; layer < size; layer++) {
-                cube.push([]);
-                for (let row = 0; row < size; row++) {
-                    cube[layer].push([]);
-                    for (let col = 0; col < size; col++) {
-                        const index = layer * size * size + row * size + col;
+            // Fill the cube (3 layers, 3 rows, 3 columns)
+            for (let layer = 0; layer < 3; layer++) {
+                for (let row = 0; row < 3; row++) {
+                    for (let col = 0; col < 3; col++) {
+                        const index = layer * 9 + row * 3 + col;
                         cube[layer][row][col] = keyedAlphabet[index % keyedAlphabet.length];
                     }
                 }
@@ -1278,60 +1290,59 @@
         }
 
         // Full Trifid decryption with key
-function decryptTrifid(ciphertext, cube, key, period = 5) {
-    const size = cube.length;
-    const coords = {};
-    
-    // Build coordinate map
-    for (let l = 0; l < size; l++) {
-        for (let r = 0; r < size; r++) {
-            for (let c = 0; c < size; c++) {
-                coords[cube[l][r][c]] = [l, r, c];
+        function decryptTrifid(ciphertext, cube, key, period = 5) {
+            const coords = {};
+            
+            // Build coordinate map
+            for (let l = 0; l < 3; l++) {
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 3; c++) {
+                        coords[cube[l][r][c]] = [l, r, c];
+                    }
+                }
             }
-        }
-    }
-    
-    let decrypted = '';
-    const groupSize = period;
-    let allLayers = [];
-    let allRows = [];
-    let allCols = [];
-    
-    // Process ciphertext in groups
-    for (let i = 0; i < ciphertext.length; i += groupSize) {
-        const group = ciphertext.substr(i, groupSize);
-        if (group.length === 0) break;
-        
-        // Extract coordinates for each character in group
-        for (const char of group) {
-            const coord = coords[char];
-            if (coord) {
-                allLayers.push(coord[0]);
-                allRows.push(coord[1]);
-                allCols.push(coord[2]);
-            } else {
-                // Handle missing characters (use first layer as default)
-                allLayers.push(0);
-                allRows.push(0);
-                allCols.push(0);
+            
+            let decrypted = '';
+            const groupSize = period;
+            let allLayers = [];
+            let allRows = [];
+            let allCols = [];
+            
+            // Process ciphertext in groups
+            for (let i = 0; i < ciphertext.length; i += groupSize) {
+                const group = ciphertext.substr(i, groupSize);
+                if (group.length === 0) break;
+                
+                // Extract coordinates for each character in group
+                for (const char of group) {
+                    const coord = coords[char];
+                    if (coord) {
+                        allLayers.push(coord[0]);
+                        allRows.push(coord[1]);
+                        allCols.push(coord[2]);
+                    } else {
+                        // Handle missing characters (use first layer as default)
+                        allLayers.push(0);
+                        allRows.push(0);
+                        allCols.push(0);
+                    }
+                }
             }
+            
+            // Combine all coordinates
+            const allCoords = allLayers.concat(allRows).concat(allCols);
+            
+            // Reconstruct plaintext from coordinates
+            for (let i = 0; i < allCoords.length; i += 3) {
+                if (i + 2 >= allCoords.length) break;
+                const l = allCoords[i];
+                const r = allCoords[i+1];
+                const c = allCoords[i+2];
+                decrypted += cube[l][r][c];
+            }
+            
+            return decrypted;
         }
-    }
-    
-    // Combine all coordinates
-    const allCoords = allLayers.concat(allRows).concat(allCols);
-    
-    // Reconstruct plaintext from coordinates
-    for (let i = 0; i < allCoords.length; i += 3) {
-        if (i + 2 >= allCoords.length) break;
-        const l = allCoords[i];
-        const r = allCoords[i+1];
-        const c = allCoords[i+2];
-        decrypted += cube[l][r][c];
-    }
-    
-    return decrypted;
-}
 
         // Main worker function
         self.onmessage = function(e) {
@@ -1339,31 +1350,30 @@ function decryptTrifid(ciphertext, cube, key, period = 5) {
                 type, 
                 ciphertext, 
                 alphabet, 
-                cubeSize, 
                 searchMode, 
                 knownPlaintext, 
                 keyLength,
                 period,
                 workerId,
-                totalWorkers,
-                keysToTest
+                keysToTest,
+                startIndex
             } = e.data;
             
             if (type === 'pause') {
                 // Pause processing (we'll just wait for resume)
+                self.paused = true;
                 return;
             }
             
             if (type === 'resume') {
                 // Resume processing
+                self.paused = false;
                 return;
             }
             
             if (type !== 'start') return;
             
             let bestScore = -Infinity;
-            let bestText = '';
-            let bestKey = '';
             let keysTested = 0;
             const startTime = performance.now();
             let lastUpdateTime = startTime;
@@ -1381,16 +1391,14 @@ function decryptTrifid(ciphertext, cube, key, period = 5) {
                 // Generate test key based on search mode
                 let testKey;
                 if (searchMode === 'full') {
-                    testKey = generateRandomKey(10, alphabet);
-                } else if (searchMode === 'partial') {
-                    testKey = generateSequentialKey(i, alphabet, keyLength);
-                } else {
-                    // Known plaintext mode - generate keys that might contain the known text
                     testKey = generateRandomKey(keyLength, alphabet);
+                } else {
+                    // For partial or known plaintext, use sequential keys from our assigned range
+                    testKey = generateSequentialKey(startIndex + i, alphabet, keyLength);
                 }
                 
                 // Generate cube with key permutation
-                const cube = generateCube(alphabet, cubeSize, testKey);
+                const cube = generateCube(alphabet, testKey);
                 
                 // Decrypt with current key
                 const decrypted = decryptTrifid(ciphertext, cube, testKey, period);
@@ -1420,8 +1428,6 @@ function decryptTrifid(ciphertext, cube, key, period = 5) {
                 if (valid && score > bestScore * 0.9) { // Send anything close to best
                     if (score > bestScore) {
                         bestScore = score;
-                        bestText = decrypted;
-                        bestKey = testKey;
                     }
                     
                     self.postMessage({
@@ -1441,10 +1447,9 @@ function decryptTrifid(ciphertext, cube, key, period = 5) {
                 keysTested: keysTested
             });
         };
-        `;
-
-        // Create a Blob URL for the worker code
-        const workerBlob = new Blob([workerCode], { type: 'application/javascript' });
+        `], { type: 'application/javascript' });
+        
+        // Create worker URL
         const workerUrl = URL.createObjectURL(workerBlob);
         
         // Override the worker path in config
