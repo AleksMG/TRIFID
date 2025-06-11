@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quantum Trifid Cracker</title>
+    <title>Professional Trifid Cipher Cracker</title>
     <style>
         :root {
             --primary: #007AFF;
@@ -230,7 +230,7 @@
             
             <div class="form-group">
                 <label for="alphabet">Alphabet (27 chars for 3×3×3 cube)</label>
-                <input id="alphabet" value="ABCDEFGHIJKLMNOPQRSTUVWXYZ?" placeholder="Enter custom alphabet">
+                <input id="alphabet" value="ABCDEFGHIKLMNOPQRSTUVWXYZ?*" placeholder="Enter custom alphabet">
             </div>
             
             <div class="settings-grid">
@@ -295,7 +295,8 @@
         const config = {
             workerPath: 'trifid-worker.js',
             maxWorkers: 16,
-            resultsLimit: 1000
+            resultsLimit: 1000,
+            maxKeysPerWorker: 100000
         };
         
         // State
@@ -304,7 +305,9 @@
             workers: [],
             activeWorkers: 0,
             bestScore: -Infinity,
-            resultsCount: 0
+            resultsCount: 0,
+            startTime: null,
+            keysTested: 0
         };
         
         // DOM Elements
@@ -417,7 +420,9 @@
                 workers: [],
                 activeWorkers: 0,
                 bestScore: -Infinity,
-                resultsCount: 0
+                resultsCount: 0,
+                startTime: performance.now(),
+                keysTested: 0
             };
             
             elements.results.innerHTML = '';
@@ -454,10 +459,16 @@
                 state.activeWorkers = workerCount;
                 updateWorkerStatus();
                 
-                const totalKeys = searchMode === 'full' ? 1000000 : 
-                                searchMode === 'partial' ? 100000 : 10000;
-                
-                const keysPerWorker = Math.ceil(totalKeys / workerCount);
+                // Calculate keys to test based on search mode
+                let keysPerWorker;
+                if (searchMode === 'full') {
+                    keysPerWorker = Math.ceil(config.maxKeysPerWorker / workerCount);
+                } else if (searchMode === 'partial') {
+                    keysPerWorker = Math.ceil(Math.pow(alphabet.length, keyLength) / workerCount);
+                    keysPerWorker = Math.min(keysPerWorker, config.maxKeysPerWorker);
+                } else { // known plaintext
+                    keysPerWorker = Math.ceil(config.maxKeysPerWorker / workerCount);
+                }
                 
                 state.workers.forEach((worker, index) => {
                     worker.postMessage({
@@ -486,9 +497,8 @@
         function handleWorkerMessage(worker, data) {
             switch (data.type) {
                 case 'progress':
-                    elements.progressBar.style.width = `${data.progress}%`;
-                    elements.status.textContent = 
-                        `Testing keys... (${data.keysTested.toLocaleString()} keys tested)`;
+                    state.keysTested += data.keysTested;
+                    updateProgress();
                     break;
                     
                 case 'result':
@@ -511,9 +521,26 @@
                     
                     if (state.activeWorkers === 0) {
                         stopCracking();
-                        elements.status.textContent = 'Search completed';
+                        const elapsed = ((performance.now() - state.startTime) / 1000).toFixed(2);
+                        elements.status.textContent = `Search completed in ${elapsed}s (${state.keysTested.toLocaleString()} keys tested)`;
                     }
                     break;
+            }
+        }
+        
+        // Update progress display
+        function updateProgress() {
+            const elapsed = (performance.now() - state.startTime) / 1000;
+            const keysPerSec = (state.keysTested / elapsed).toFixed(0);
+            
+            elements.status.textContent = 
+                `Testing keys... (${state.keysTested.toLocaleString()} keys, ${keysPerSec} keys/s)`;
+            
+            // Update progress bar if we have an estimate
+            if (state.workers[0] && state.workers[0].keysToTest) {
+                const totalKeys = state.workers[0].keysToTest * state.workers.length;
+                const progress = Math.min(100, (state.keysTested / totalKeys) * 100);
+                elements.progressBar.style.width = `${progress}%`;
             }
         }
         
